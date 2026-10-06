@@ -68,6 +68,15 @@ create table if not exists public.goals (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.daily_goals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  goal_date date not null,
+  completed boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.habits (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -200,6 +209,8 @@ create index if not exists projects_user_status_updated_idx
   on public.projects (user_id, status, updated_at desc);
 create index if not exists goals_user_status_updated_idx
   on public.goals (user_id, status, updated_at desc);
+create index if not exists daily_goals_user_date_created_idx
+  on public.daily_goals (user_id, goal_date, created_at);
 create index if not exists habits_user_active_created_idx
   on public.habits (user_id, active, created_at);
 create index if not exists habit_records_user_date_idx
@@ -224,6 +235,7 @@ begin
     'projects',
     'tasks',
     'goals',
+    'daily_goals',
     'habits',
     'habit_records',
     'notes',
@@ -253,6 +265,7 @@ begin
   foreach table_name in array array[
     'projects',
     'goals',
+    'daily_goals',
     'habits',
     'notes',
     'journal_entries',

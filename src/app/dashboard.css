@@ -38,6 +38,14 @@
 .custom-check { width: 17px; height: 17px; flex: 0 0 17px; display: grid; place-items: center; border: 1px solid #42546b; border-radius: 4px; color: #071711; font-size: .65rem; }
 .check-list label.checked { color: var(--muted); text-decoration: line-through; }
 .checked .custom-check { background: var(--primary); border-color: var(--primary); }
+.goal-item { display: flex; align-items: center; gap: 6px; }
+.goal-item label { min-width: 0; flex: 1; }
+.goal-item label > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goal-remove { flex: 0 0 26px; width: 26px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer; }
+.goal-remove:hover { color: var(--danger); background: rgba(255,117,133,.08); }
+.daily-goal-form { display: flex; gap: 6px; margin-top: 11px; }
+.daily-goal-form .input { min-width: 0; min-height: 36px; padding: 7px 9px; font-size: .7rem; }
+.daily-goal-form .button { flex: 0 0 36px; min-height: 36px; padding: 0; }
 .habit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .habit { min-width: 0; min-height: 70px; padding: 7px 4px; border-radius: 7px; border: 1px solid var(--line); background: #0d1a29; display: grid; justify-items: center; gap: 2px; cursor: pointer; }
 .habit:hover { border-color: rgba(101,230,180,.24); }

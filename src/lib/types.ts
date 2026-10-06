@@ -40,6 +40,13 @@ export interface Goal {
   icon: string;
 }
 
+export interface DailyGoal {
+  id: string;
+  title: string;
+  goalDate: string;
+  completed: boolean;
+}
+
 export interface Habit {
   id: string;
   title: string;
