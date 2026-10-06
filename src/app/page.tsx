@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     const today = getLocalDateString(timeZone);
     const week = getWeekDateStrings(today);
     const [tasksResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult] = await Promise.all([
-      supabase.from("tasks").select("*").eq("user_id", user.id).eq("due_date", today).order("due_time"),
+      supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").order("due_date").order("due_time", { nullsFirst: false }).limit(8),
       supabase.from("projects").select("*").eq("user_id", user.id).in("status", ["active", "planning"]).order("updated_at", { ascending: false }).limit(3),
       supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "active").order("updated_at", { ascending: false }).limit(5),
       supabase.from("habits").select("*").eq("user_id", user.id).eq("active", true).limit(6),
