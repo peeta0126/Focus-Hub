@@ -18,6 +18,7 @@ import "./dashboard.css";
 export default async function DashboardPage() {
   let dashboard: { tasks: Task[]; projects: Project[]; goals: Goal[]; habits: Habit[]; notes: Note[]; events: CalendarEvent[] } = { tasks: [], projects: [], goals: [], habits: [], notes: [], events: [] };
   let timeZone = DEFAULT_TIME_ZONE;
+  let weatherLocation = "충주시";
   const supabase = await createClient();
 
   if (supabase) {
@@ -30,9 +31,10 @@ export default async function DashboardPage() {
     }
     if (authError) console.error("Failed to read dashboard user", authError);
     if (user) {
-    const settingsResult = await supabase.from("settings").select("timezone").eq("user_id", user.id).maybeSingle();
-    if (settingsResult.error) console.error("Failed to load dashboard timezone", settingsResult.error);
+    const settingsResult = await supabase.from("settings").select("timezone,weather_location").eq("user_id", user.id).maybeSingle();
+    if (settingsResult.error) console.error("Failed to load dashboard settings", settingsResult.error);
     timeZone = settingsResult.data?.timezone || DEFAULT_TIME_ZONE;
+    weatherLocation = settingsResult.data?.weather_location?.trim() || weatherLocation;
     const today = getLocalDateString(timeZone);
     const week = getWeekDateStrings(today);
     const [tasksResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult] = await Promise.all([
@@ -66,7 +68,7 @@ export default async function DashboardPage() {
       <span className="sync-state">● 데이터 준비됨</span>
     </div>
     <div className="dashboard-grid">
-      <ClockCard /><WeatherCard /><TodayGoals tasks={dashboard.tasks} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} />
+      <ClockCard /><WeatherCard location={weatherLocation} /><TodayGoals tasks={dashboard.tasks} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} />
       <WeeklyCalendar events={dashboard.events} timeZone={timeZone} /><ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} />
     </div>
   </main>;
