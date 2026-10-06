@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export type SimpleValue = string | number | boolean | string[];
 export type SimpleEntity = { id: string; title: string; description: string; [key: string]: SimpleValue };
-export type SimpleField = { key: string; label: string; type?: "text" | "textarea" | "date" | "time" | "number" | "url" | "select"; options?: string[]; required?: boolean };
+export type SimpleField = { key: string; label: string; type?: "text" | "textarea" | "date" | "time" | "number" | "url" | "select" | "emoji"; options?: string[]; required?: boolean };
 
 interface SimpleManagerProps {
   table: string;
@@ -137,9 +137,15 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
       </article> : <article className="data-row" key={item.id}><div className="data-main"><strong>{item.title}</strong><p>{item.description || renderMeta(item)}</p></div><span className="status-pill">{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} /></article>)}
       {visible.length === 0 && <div className="empty-state"><div><span>✦</span>{emptyText}</div></div>}
     </div>
-    <Modal open={open} title={editing ? "항목 수정" : "새 항목"} onClose={close}><form className="form-grid" action={save}>{fields.map((field) => <div className="field" key={field.key}><label htmlFor={`entity-${field.key}`}>{field.label}</label>{field.type === "textarea" ? <textarea id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} /> : field.type === "select" ? <select id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? field.options?.[0] ?? "")}>{field.options?.map((option) => <option key={option}>{option}</option>)}</select> : <input id={`entity-${field.key}`} className="input" name={field.key} type={field.type ?? "text"} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} min={field.type === "number" ? 0 : undefined} max={field.key === "progress" ? 100 : undefined} />}</div>)}<div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary">저장</button></div></form></Modal>
+    <Modal open={open} title={editing ? "항목 수정" : "새 항목"} onClose={close}><form className="form-grid" action={save}>{fields.map((field) => <div className="field" key={field.key}><label htmlFor={`entity-${field.key}`}>{field.label}</label>{field.type === "textarea" ? <textarea id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} /> : field.type === "select" ? <select id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? field.options?.[0] ?? "")}>{field.options?.map((option) => <option key={option}>{option}</option>)}</select> : field.type === "emoji" ? <EmojiField id={`entity-${field.key}`} name={field.key} initialValue={String(editing?.[field.key] ?? "")} options={field.options ?? []} required={field.required} /> : <input id={`entity-${field.key}`} className="input" name={field.key} type={field.type ?? "text"} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} min={field.type === "number" ? 0 : undefined} max={field.key === "progress" ? 100 : undefined} />}</div>)}<div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary">저장</button></div></form></Modal>
     {toast && <Toast message={toast} onDone={() => setToast("")} />}
   </>;
+}
+
+function EmojiField({ id, name, initialValue, options, required }: { id: string; name: string; initialValue: string; options: string[]; required?: boolean }) {
+  const [value, setValue] = useState(initialValue);
+
+  return <><input id={id} className="input" name={name} value={value} onChange={(event) => setValue(event.target.value)} required={required} /><div className="emoji-options" role="group" aria-label="아이콘 프리셋">{options.map((emoji) => <button key={emoji} type="button" className={`emoji-option${value === emoji ? " active" : ""}`} onClick={() => setValue(emoji)} aria-label={`${emoji} 아이콘 선택`} aria-pressed={value === emoji}>{emoji}</button>)}</div></>;
 }
 
 function RowActions({ onEdit, onRemove }: { onEdit: () => void; onRemove: () => void }) {
