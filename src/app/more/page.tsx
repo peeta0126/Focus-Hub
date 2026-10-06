@@ -1,0 +1,4 @@
+import Link from "next/link";
+import "../collection.css";
+const links = [{ href: "/goals", icon: "◎", title: "목표", text: "장기 목표와 마일스톤" }, { href: "/habits", icon: "♻", title: "습관", text: "반복과 히트맵" }, { href: "/notes", icon: "▤", title: "노트", text: "아이디어와 메모" }, { href: "/journal", icon: "☾", title: "저널", text: "날짜별 하루 기록" }, { href: "/cs", icon: "⌘", title: "CS 학습", text: "개발 학습 아카이브" }, { href: "/resources", icon: "☆", title: "자료 모음", text: "링크와 참고 자료" }];
+export default function MorePage() { return <main className="page-wrap"><div className="page-heading"><div><h1>더보기</h1><p>Focus Hub의 모든 기록 공간에 접근하세요.</p></div></div><div className="more-grid">{links.map((item) => <Link href={item.href} className="card more-link" key={item.href}><span>{item.icon}</span><div><strong>{item.title}</strong><small>{item.text}</small></div></Link>)}</div></main>; }
