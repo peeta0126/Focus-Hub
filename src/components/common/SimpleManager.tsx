@@ -5,6 +5,7 @@ import { AssetImage } from "./AssetImage";
 import { Modal } from "./Modal";
 import { Toast } from "./Toast";
 import { createClient } from "@/lib/supabase/client";
+import { createUuid } from "@/lib/uuid";
 
 export type SimpleValue = string | number | boolean | string[];
 export type SimpleEntity = { id: string; title: string; description: string; [key: string]: SimpleValue };
@@ -76,7 +77,7 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
       setError(`${missingRequiredField.label} 항목을 입력해주세요.`);
       return;
     }
-    const base: SimpleEntity = { id: editing?.id ?? crypto.randomUUID(), title: String(form.get("title") ?? ""), description: String(form.get("description") ?? "") };
+    const base: SimpleEntity = { id: editing?.id ?? createUuid(), title: String(form.get("title") ?? ""), description: String(form.get("description") ?? "") };
     fields.forEach((field) => {
       if (field.key === "title" || field.key === "description") return;
       const raw = form.get(field.key);

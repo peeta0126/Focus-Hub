@@ -9,6 +9,7 @@ import { Toast } from "@/components/common/Toast";
 import { emptyStringToNull, getLocalDateString } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
 import type { Task } from "@/lib/types";
+import { createUuid } from "@/lib/uuid";
 
 const schema = z.object({
   title: z.string().min(1, "제목을 입력해주세요.").max(100),
@@ -102,7 +103,7 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
   };
 
   const save = async (values: Values) => {
-    const task: Task = { ...(editing ?? { id: crypto.randomUUID() }), ...values, dueTime: values.dueTime || undefined };
+    const task: Task = { ...(editing ?? { id: createUuid() }), ...values, dueTime: values.dueTime || undefined };
     const previousItems = items;
     setItems((current) => editing
       ? current.map((item) => item.id === editing.id ? task : item)
