@@ -34,6 +34,7 @@ const createDefaults = (): Values => ({
 
 const statusLabel = { todo: "할 일", in_progress: "진행 중", done: "완료" };
 const priorityLabel = { low: "낮음", medium: "보통", high: "높음" };
+const categoryOptions = ["개인", "공부", "업무", "운동", "기타"];
 
 export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) {
   const [items, setItems] = useState<Task[]>([]);
@@ -191,7 +192,7 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
         <div className="field"><label htmlFor="title">제목</label><input id="title" className="input" {...register("title")} />{errors.title && <small className="field-error">{errors.title.message}</small>}</div>
         <div className="field"><label htmlFor="description">설명</label><textarea id="description" className="input" {...register("description")} /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div className="field"><label htmlFor="status">상태</label><select id="status" className="input" {...register("status")}><option value="todo">할 일</option><option value="in_progress">진행 중</option><option value="done">완료</option></select></div><div className="field"><label htmlFor="priority">우선순위</label><select id="priority" className="input" {...register("priority")}><option value="low">낮음</option><option value="medium">보통</option><option value="high">높음</option></select></div></div>
-        <div className="field"><label htmlFor="category">카테고리</label><input id="category" className="input" {...register("category")} /></div>
+        <div className="field"><label htmlFor="category">카테고리</label><select id="category" className="input" {...register("category")}>{editing?.category && !categoryOptions.includes(editing.category) && <option value={editing.category}>{editing.category}</option>}{categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div className="field"><label htmlFor="dueDate">마감일</label><input id="dueDate" type="date" className="input" required aria-invalid={Boolean(errors.dueDate)} {...register("dueDate")} />{errors.dueDate && <small className="field-error">{errors.dueDate.message}</small>}</div><div className="field"><label htmlFor="dueTime">마감 시간</label><input id="dueTime" type="time" className="input" {...register("dueTime")} /></div></div>
         <div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary" disabled={isSubmitting}>저장</button></div>
       </form>
