@@ -14,6 +14,7 @@
 .row-action { width: 36px; height: 36px; border: 1px solid var(--line); background: transparent; border-radius: 6px; color: var(--muted); cursor: pointer; }
 .row-action:hover { color: var(--text); background: var(--panel-3); }
 .row-action.danger:hover { color: var(--danger); }
+.row-action:disabled { opacity: .42; cursor: not-allowed; color: var(--muted); background: transparent; }
 .status-pill { font-size: .6rem; color: var(--secondary); background: rgba(108,184,255,.08); padding: 4px 7px; border-radius: 99px; }
 .toast { position: fixed; z-index: 100; top: 75px; right: 24px; padding: 11px 15px; background: #173427; color: var(--primary); border: 1px solid rgba(101,230,180,.25); border-radius: 8px; font-size: .75rem; box-shadow: 0 12px 35px rgba(0,0,0,.35); }
 .section-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 13px; }

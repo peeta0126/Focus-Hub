@@ -129,6 +129,23 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
       setError("할 일을 저장하지 못했습니다.");
       return;
     }
+    const { error: eventError } = await supabase.from("events").upsert({
+      user_id: user.id,
+      source_task_id: task.id,
+      title: task.title,
+      description: task.description ?? "",
+      event_date: task.dueDate,
+      start_time: emptyStringToNull(task.dueTime),
+      end_time: null,
+      category: task.category,
+    }, { onConflict: "source_task_id" });
+    if (eventError) {
+      console.error("Failed to sync task event", eventError);
+      setEditing(task);
+      setError("할 일은 저장됐지만 플래너 일정 동기화에 실패했습니다. 저장을 다시 눌러 재시도해주세요.");
+      setToast("할 일은 저장됐지만 플래너 일정 동기화에 실패했습니다.");
+      return;
+    }
     setError("");
     setToast(editing ? "할 일을 수정했습니다." : "새 할 일을 추가했습니다.");
     close();

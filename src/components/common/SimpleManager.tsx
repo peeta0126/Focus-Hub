@@ -9,7 +9,7 @@ import { createUuid } from "@/lib/uuid";
 
 export type SimpleValue = string | number | boolean | string[];
 export type SimpleEntity = { id: string; title: string; description: string; [key: string]: SimpleValue };
-export type SimpleField = { key: string; label: string; type?: "text" | "textarea" | "date" | "time" | "number" | "url" | "select" | "emoji"; options?: string[]; required?: boolean };
+export type SimpleField = { key: string; label: string; type?: "text" | "textarea" | "date" | "time" | "number" | "url" | "select" | "emoji" | "hidden"; options?: string[]; required?: boolean };
 
 interface SimpleManagerProps {
   table: string;
@@ -20,9 +20,11 @@ interface SimpleManagerProps {
   toDatabase: (item: SimpleEntity, userId: string) => Record<string, SimpleValue | null>;
   cardMode?: boolean;
   detailBase?: string;
+  isItemLocked?: (item: SimpleEntity) => boolean;
+  lockedItemMessage?: string;
 }
 
-export function SimpleManager({ table, initial, fields, emptyText, renderMeta, toDatabase, cardMode = false, detailBase }: SimpleManagerProps) {
+export function SimpleManager({ table, initial, fields, emptyText, renderMeta, toDatabase, cardMode = false, detailBase, isItemLocked, lockedItemMessage }: SimpleManagerProps) {
   const [items, setItems] = useState(initial);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -127,18 +129,18 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
   };
 
   return <>
-    <div className="toolbar"><div className="search-wrap"><input className="input" aria-label="검색" placeholder="제목이나 내용 검색" value={query} onChange={(event) => setQuery(event.target.value)} /></div><button className="button primary" onClick={() => { setEditing(null); setOpen(true); }}>＋ 새 항목</button></div>
+    <div className="toolbar"><div className="search-wrap"><input className="input" aria-label="검색" placeholder="제목이나 내용 검색" value={query} onChange={(event) => setQuery(event.target.value)} /></div><button type="button" className="button primary" onClick={() => { setEditing(null); setOpen(true); }}>＋ 새 항목</button></div>
     {error && <p className="field-error" role="alert">{error}</p>}
     <div className={cardMode ? "section-grid" : "card content-card data-list"}>
       {visible.map((item) => cardMode ? <article className="card entity-card" key={item.id}>
         {typeof item.thumbnail === "string" && <div className="entity-thumbnail"><AssetImage src={item.thumbnail} alt={`${item.title} 썸네일`} sizes="(max-width: 767px) 100vw, 33vw" /></div>}
         <h3>{detailBase ? <a href={`${detailBase}/${item.id}`}>{item.title}</a> : item.title}</h3><p>{item.description}</p>
         {typeof item.progress === "number" && <div className="progress-track"><div className="progress-fill" style={{ width: `${item.progress}%` }} /></div>}
-        <div className="entity-meta"><span>{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} /></div>
-      </article> : <article className="data-row" key={item.id}><div className="data-main"><strong>{item.title}</strong><p>{item.description || renderMeta(item)}</p></div><span className="status-pill">{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} /></article>)}
+        <div className="entity-meta"><span>{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></div>
+      </article> : <article className="data-row" key={item.id}><div className="data-main"><strong>{item.title}</strong><p>{item.description || renderMeta(item)}</p></div><span className="status-pill">{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></article>)}
       {visible.length === 0 && <div className="empty-state"><div><span>✦</span>{emptyText}</div></div>}
     </div>
-    <Modal open={open} title={editing ? "항목 수정" : "새 항목"} onClose={close}><form className="form-grid" action={save}>{fields.map((field) => <div className="field" key={field.key}><label htmlFor={`entity-${field.key}`}>{field.label}</label>{field.type === "textarea" ? <textarea id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} /> : field.type === "select" ? <select id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? field.options?.[0] ?? "")}>{field.options?.map((option) => <option key={option}>{option}</option>)}</select> : field.type === "emoji" ? <EmojiField id={`entity-${field.key}`} name={field.key} initialValue={String(editing?.[field.key] ?? "")} options={field.options ?? []} required={field.required} /> : <input id={`entity-${field.key}`} className="input" name={field.key} type={field.type ?? "text"} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} min={field.type === "number" ? 0 : undefined} max={field.key === "progress" ? 100 : undefined} />}</div>)}<div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary">저장</button></div></form></Modal>
+    <Modal open={open} title={editing ? "항목 수정" : "새 항목"} onClose={close}><form className="form-grid" action={save}>{fields.map((field) => field.type === "hidden" ? <input key={field.key} name={field.key} type="hidden" defaultValue={String(editing?.[field.key] ?? "")} /> : <div className="field" key={field.key}><label htmlFor={`entity-${field.key}`}>{field.label}</label>{field.type === "textarea" ? <textarea id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} /> : field.type === "select" ? <select id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? field.options?.[0] ?? "")}>{field.options?.map((option) => <option key={option}>{option}</option>)}</select> : field.type === "emoji" ? <EmojiField id={`entity-${field.key}`} name={field.key} initialValue={String(editing?.[field.key] ?? "")} options={field.options ?? []} required={field.required} /> : <input id={`entity-${field.key}`} className="input" name={field.key} type={field.type ?? "text"} defaultValue={String(editing?.[field.key] ?? "")} required={field.required} min={field.type === "number" ? 0 : undefined} max={field.key === "progress" ? 100 : undefined} />}</div>)}<div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary">저장</button></div></form></Modal>
     {toast && <Toast message={toast} onDone={() => setToast("")} />}
   </>;
 }
@@ -149,6 +151,7 @@ function EmojiField({ id, name, initialValue, options, required }: { id: string;
   return <><input id={id} className="input" name={name} value={value} onChange={(event) => setValue(event.target.value)} required={required} /><div className="emoji-options" role="group" aria-label="아이콘 프리셋">{options.map((emoji) => <button key={emoji} type="button" className={`emoji-option${value === emoji ? " active" : ""}`} onClick={() => setValue(emoji)} aria-label={`${emoji} 아이콘 선택`} aria-pressed={value === emoji}>{emoji}</button>)}</div></>;
 }
 
-function RowActions({ onEdit, onRemove }: { onEdit: () => void; onRemove: () => void }) {
-  return <div className="row-actions"><button className="row-action" onClick={onEdit} aria-label="수정">✎</button><button className="row-action danger" onClick={onRemove} aria-label="삭제">×</button></div>;
+function RowActions({ onEdit, onRemove, disabled = false, disabledMessage }: { onEdit: () => void; onRemove: () => void; disabled?: boolean; disabledMessage?: string }) {
+  const message = disabled ? disabledMessage : undefined;
+  return <div className="row-actions"><button type="button" className="row-action" onClick={onEdit} disabled={disabled} title={message} aria-label={message ? `수정 불가: ${message}` : "수정"}>✎</button><button type="button" className="row-action danger" onClick={onRemove} disabled={disabled} title={message} aria-label={message ? `삭제 불가: ${message}` : "삭제"}>×</button></div>;
 }

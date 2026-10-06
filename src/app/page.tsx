@@ -64,7 +64,7 @@ export default async function DashboardPage() {
       goals: (goalsResult.data ?? []).map((row): Goal => ({ id: row.id, title: row.title, description: row.description, category: row.category, progress: row.progress, targetDate: row.target_date ?? "", status: row.status as Goal["status"], icon: row.icon ?? "◎" })),
       habits: (habitsResult.data ?? []).map((row): Habit => ({ id: row.id, title: row.title, icon: row.icon ?? "✓", frequency: row.frequency as Habit["frequency"], targetCount: row.target_count, active: row.active, completedToday: completed.has(row.id) })),
       notes: (notesResult.data ?? []).map((row): Note => ({ id: row.id, title: row.title, content: row.content, tags: row.tags ?? [], category: row.category, updatedAt: new Date(row.updated_at).toLocaleDateString("ko-KR", { timeZone }) })),
-      events: (eventsResult.data ?? []).map((row): CalendarEvent => ({ id: row.id, title: row.title, date: row.event_date, startTime: row.start_time ?? "", endTime: row.end_time ?? "", category: row.category })),
+      events: (eventsResult.data ?? []).map((row): CalendarEvent => ({ id: row.id, title: row.title, date: row.event_date, startTime: row.start_time ?? "", endTime: row.end_time ?? "", category: row.category, sourceTaskId: row.source_task_id ?? undefined })),
     };
     }
   }

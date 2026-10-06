@@ -152,6 +152,7 @@ create table if not exists public.resources (
 create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  source_task_id uuid unique references public.tasks(id) on delete cascade,
   title text not null,
   description text not null default '',
   event_date date not null,
@@ -345,6 +346,80 @@ with check (
 create policy owner_delete
 on public.tasks for delete to authenticated
 using ((select auth.uid()) = user_id);
+
+-- Events must belong to the current user. Task-backed events may only
+-- reference one of that user's tasks.
+drop policy if exists owner_select on public.events;
+drop policy if exists owner_insert on public.events;
+drop policy if exists owner_update on public.events;
+drop policy if exists owner_delete on public.events;
+
+create policy owner_select
+on public.events for select to authenticated
+using (
+  (select auth.uid()) = user_id
+  and (
+    source_task_id is null
+    or exists (
+      select 1 from public.tasks
+      where tasks.id = events.source_task_id
+        and tasks.user_id = (select auth.uid())
+    )
+  )
+);
+
+create policy owner_insert
+on public.events for insert to authenticated
+with check (
+  (select auth.uid()) = user_id
+  and (
+    source_task_id is null
+    or exists (
+      select 1 from public.tasks
+      where tasks.id = events.source_task_id
+        and tasks.user_id = (select auth.uid())
+    )
+  )
+);
+
+create policy owner_update
+on public.events for update to authenticated
+using (
+  (select auth.uid()) = user_id
+  and (
+    source_task_id is null
+    or exists (
+      select 1 from public.tasks
+      where tasks.id = events.source_task_id
+        and tasks.user_id = (select auth.uid())
+    )
+  )
+)
+with check (
+  (select auth.uid()) = user_id
+  and (
+    source_task_id is null
+    or exists (
+      select 1 from public.tasks
+      where tasks.id = events.source_task_id
+        and tasks.user_id = (select auth.uid())
+    )
+  )
+);
+
+create policy owner_delete
+on public.events for delete to authenticated
+using (
+  (select auth.uid()) = user_id
+  and (
+    source_task_id is null
+    or exists (
+      select 1 from public.tasks
+      where tasks.id = events.source_task_id
+        and tasks.user_id = (select auth.uid())
+    )
+  )
+);
 
 -- Habit records must belong to the current user and may only reference one of
 -- that user's habits.

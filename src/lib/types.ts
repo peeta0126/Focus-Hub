@@ -73,4 +73,5 @@ export interface CalendarEvent {
   startTime: string;
   endTime: string;
   category: string;
+  sourceTaskId?: string;
 }

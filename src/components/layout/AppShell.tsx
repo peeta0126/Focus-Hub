@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Modal } from "@/components/common/Modal";
 import { getLocalDateString } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
+import { createUuid } from "@/lib/uuid";
 import { Sidebar } from "./Sidebar";
 import { MobileBottomNav } from "./MobileBottomNav";
 
@@ -36,6 +37,7 @@ function QuickAddForm({ type, onDone }: { type: string; onDone: () => void }) {
   const [habits, setHabits] = useState<{ id: string; title: string }[]>([]);
   const [loadingHabits, setLoadingHabits] = useState(false);
   const [error, setError] = useState("");
+  const [pendingTaskId, setPendingTaskId] = useState("");
   const router = useRouter();
   const isMobileQuick = type === "빠른 추가";
   const kind = isMobileQuick ? mobileChoice : type;
@@ -68,7 +70,20 @@ function QuickAddForm({ type, onDone }: { type: string; onDone: () => void }) {
     const today = getLocalDateString(settingsResult.data?.timezone);
     const common = { user_id: user.id, title };
     let writeError: { message: string } | null = null;
-    if (kind === "새 할 일") ({ error: writeError } = await supabase.from("tasks").insert({ ...common, description: detail, due_date: today }));
+    if (kind === "새 할 일") {
+      const taskId = pendingTaskId || createUuid();
+      const task = { id: taskId, ...common, description: detail, due_date: today, due_time: null, category: "개인" };
+      ({ error: writeError } = await supabase.from("tasks").upsert(task, { onConflict: "id" }));
+      if (!writeError) {
+        const { error: eventError } = await supabase.from("events").upsert({ user_id: user.id, source_task_id: taskId, title, description: detail, event_date: today, start_time: null, end_time: null, category: "개인" }, { onConflict: "source_task_id" });
+        if (eventError) {
+          console.error("Failed to sync quick-add task event", eventError);
+          setPendingTaskId(taskId);
+          setError("할 일은 저장됐지만 플래너 일정 동기화에 실패했습니다. 저장을 다시 눌러 재시도해주세요.");
+          return;
+        }
+      }
+    }
     else if (kind === "새 프로젝트") ({ error: writeError } = await supabase.from("projects").insert({ ...common, description: detail }));
     else if (kind === "새 노트") ({ error: writeError } = await supabase.from("notes").insert({ ...common, content: detail }));
     else if (kind === "새 일정") ({ error: writeError } = await supabase.from("events").insert({ ...common, description: detail, event_date: today }));
