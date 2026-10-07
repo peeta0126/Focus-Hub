@@ -12,6 +12,7 @@
     "@hookform/resolvers": "latest",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@vercel/analytics": "^2.0.1",
     "date-fns": "latest",
     "next": "16.3.8",
     "react": "latest",

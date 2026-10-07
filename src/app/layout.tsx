@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: { default: "Focus Hub", template: "%s · Focus Hub" },
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#08111D", colorScheme: "dark", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ko"><body><AppShell>{children}</AppShell><ServiceWorkerRegister /></body></html>;
+  return <html lang="ko"><body><AppShell>{children}</AppShell><ServiceWorkerRegister /><Analytics /></body></html>;
 }
