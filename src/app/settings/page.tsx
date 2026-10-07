@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Toast } from "@/components/common/Toast";
 import { DEFAULT_TIME_ZONE } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import "../collection.css";
 
 const defaults = {
@@ -40,5 +41,5 @@ export default function SettingsPage() {
     setToast("설정을 저장했습니다.");
   };
 
-  return <main className="page-wrap"><div className="page-heading"><div><h1>설정</h1><p>대시보드 문구와 기본 지역을 설정하세요.</p></div></div><form className="card card-pad form-grid" onSubmit={save}><div className="field"><label htmlFor="quote">오늘의 문구</label><input id="quote" className="input" value={values.dailyQuote} onChange={(event) => setValues((current) => ({ ...current, dailyQuote: event.target.value }))} disabled={loading} /></div><div className="field"><label htmlFor="location">날씨 지역</label><input id="location" className="input" value={values.weatherLocation} onChange={(event) => setValues((current) => ({ ...current, weatherLocation: event.target.value }))} disabled={loading} /></div><div className="field"><label htmlFor="timezone">시간대</label><select id="timezone" className="input" value={values.timezone} onChange={(event) => setValues((current) => ({ ...current, timezone: event.target.value }))} disabled={loading}><option value="Asia/Seoul">Asia/Seoul</option></select></div><div className="form-actions"><button className="button primary" disabled={loading}>설정 저장</button></div></form>{toast && <Toast message={toast} onDone={() => setToast("")} />}</main>;
+  return <main className="page-wrap"><div className="page-heading"><div><h1>설정</h1><p>화면과 대시보드의 기본 환경을 설정하세요.</p></div></div><div className="settings-stack"><section className="card card-pad"><ThemeToggle expanded /></section><form className="card card-pad form-grid" onSubmit={save}><div className="field"><label htmlFor="quote">오늘의 문구</label><input id="quote" className="input" value={values.dailyQuote} onChange={(event) => setValues((current) => ({ ...current, dailyQuote: event.target.value }))} disabled={loading} /></div><div className="field"><label htmlFor="location">날씨 지역</label><input id="location" className="input" value={values.weatherLocation} onChange={(event) => setValues((current) => ({ ...current, weatherLocation: event.target.value }))} disabled={loading} /></div><div className="field"><label htmlFor="timezone">시간대</label><select id="timezone" className="input" value={values.timezone} onChange={(event) => setValues((current) => ({ ...current, timezone: event.target.value }))} disabled={loading}><option value="Asia/Seoul">Asia/Seoul</option></select></div><div className="form-actions"><button className="button primary" disabled={loading}>설정 저장</button></div></form></div>{toast && <Toast message={toast} onDone={() => setToast("")} />}</main>;
 }

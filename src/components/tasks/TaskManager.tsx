@@ -39,7 +39,7 @@ const priorityLabel = { low: "낮음", medium: "보통", high: "높음" };
 export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) {
   const [items, setItems] = useState<Task[]>([]);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState<"all" | "today" | "upcoming" | "done">("all");
   const [sort, setSort] = useState("due");
   const [editing, setEditing] = useState<Task | null>(null);
   const [open, setOpen] = useState(initialOpen);
@@ -73,11 +73,23 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
   }, []);
 
   const visible = useMemo(
-    () => items
-      .filter((task) => (status === "all" || task.status === status) && task.title.toLowerCase().includes(query.toLowerCase()))
+    () => {
+      const today = getLocalDateString();
+      return items
+      .filter((task) => {
+        const matchesFilter = status === "all"
+          ? task.status !== "done"
+          : status === "today"
+            ? task.status !== "done" && task.dueDate === today
+            : status === "upcoming"
+              ? task.status !== "done" && task.dueDate > today
+              : task.status === "done";
+        return matchesFilter && task.title.toLowerCase().includes(query.toLowerCase());
+      })
       .sort((a, b) => sort === "priority"
         ? ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority])
-        : `${a.dueDate}${a.dueTime}`.localeCompare(`${b.dueDate}${b.dueTime}`)),
+        : `${a.dueDate}${a.dueTime}`.localeCompare(`${b.dueDate}${b.dueTime}`));
+    },
     [items, query, sort, status],
   );
 
@@ -195,15 +207,17 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
 
   return <>
     {error && <p className="field-error" role="alert">{error}</p>}
+    <div className="mobile-task-filters" role="tablist" aria-label="할 일 필터">{([['all', '전체'], ['today', '오늘'], ['upcoming', '예정'], ['done', '완료']] as const).map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={status === value} className={status === value ? "active" : ""} onClick={() => setStatus(value)}>{label}</button>)}</div>
     <div className="toolbar">
       <div className="search-wrap"><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="할 일 검색" aria-label="할 일 검색" /></div>
-      <select className="input select-compact" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="상태 필터"><option value="all">모든 상태</option><option value="todo">할 일</option><option value="in_progress">진행 중</option><option value="done">완료</option></select>
+      <select className="input select-compact desktop-status-filter" value={status} onChange={(event) => setStatus(event.target.value as typeof status)} aria-label="상태 필터"><option value="all">미완료</option><option value="today">오늘</option><option value="upcoming">예정</option><option value="done">완료</option></select>
       <select className="input select-compact" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="정렬"><option value="due">마감순</option><option value="priority">우선순위순</option></select>
     </div>
     <section className="card content-card"><div className="data-list">
-      {visible.map((task) => <article className="data-row" key={task.id}><button className="task-check" onClick={() => toggle(task)} aria-label="완료 상태 변경">{task.status === "done" ? "✓" : ""}</button><div className="data-main"><strong style={task.status === "done" ? { textDecoration: "line-through", color: "var(--muted)" } : undefined}>{task.title}</strong><p>{task.category} · {task.dueDate} {task.dueTime} · 우선순위 {priorityLabel[task.priority]}</p></div><span className="status-pill">{statusLabel[task.status]}</span><div className="row-actions"><button className="row-action" onClick={() => startEdit(task)} aria-label="수정">✎</button><button className="row-action danger" onClick={() => remove(task)} aria-label="삭제">×</button></div></article>)}
+      {visible.map((task) => <article className={`data-row task-data-row ${task.status === "done" ? "is-done" : ""}`} key={task.id}><button className="task-check" onClick={() => toggle(task)} aria-label={`${task.title} 완료 상태 변경`}>{task.status === "done" ? "✓" : ""}</button><div className="data-main"><strong>{task.title}</strong><p><span aria-hidden="true">◷</span> {task.dueDate} {task.dueTime || "시간 미정"}</p></div><span className={`priority ${task.priority}`}>{priorityLabel[task.priority]}</span><span className="status-pill">{statusLabel[task.status]}</span><div className="row-actions"><button className="row-action" onClick={() => startEdit(task)} aria-label={`${task.title} 수정`}>✎</button><button className="row-action danger" onClick={() => remove(task)} aria-label={`${task.title} 삭제`}>×</button></div></article>)}
       {visible.length === 0 && <div className="empty-state"><div><span>☾</span>조건에 맞는 할 일이 없어요.</div></div>}
     </div></section>
+    <button type="button" className="mobile-add-task" onClick={() => { setEditing(null); reset(createDefaults()); setOpen(true); }}>＋ <span>새 할 일 추가</span></button>
     <Modal open={open} title={editing ? "할 일 수정" : "새 할 일"} onClose={close}>
       <form className="form-grid" onSubmit={handleSubmit(save)}>
         <div className="field"><label htmlFor="title">제목</label><input id="title" className="input" {...register("title")} />{errors.title && <small className="field-error">{errors.title.message}</small>}</div>

@@ -1,13 +1,16 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Modal } from "@/components/common/Modal";
+import { Icon } from "@/components/common/Icon";
 import { getLocalDateString } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
 import { createUuid } from "@/lib/uuid";
 import { Sidebar } from "./Sidebar";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { ThemeToggle } from "./ThemeToggle";
 
 const pathNames: Record<string, string> = { tasks: "할 일 관리", planner: "주간 플래너", projects: "프로젝트", goals: "목표", habits: "습관", notes: "노트", journal: "저널", cs: "CS 학습", resources: "자료 모음", more: "더보기", settings: "설정" };
 
@@ -20,11 +23,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <Sidebar onQuickAdd={setQuickType} />
       <div className="main-area">
-        <header className="topbar"><div className="topbar-path">Focus Hub&nbsp; / &nbsp;<span style={{ color: "var(--text)" }}>{section}</span></div><div className="topbar-actions"><button className="icon-button" aria-label="검색">⌕</button><a className="icon-button" href="/settings" aria-label="설정">⚙</a><div className="profile-dot" title="내 프로필">ME</div></div></header>
+        <header className="topbar"><div className="topbar-path">Focus Hub&nbsp; / &nbsp;<span style={{ color: "var(--text-primary)" }}>{section}</span></div><div className="topbar-actions"><ThemeToggle /><a className="icon-button" href="/settings" aria-label="설정"><Icon name="settings" /></a><div className="profile-dot" title="내 프로필">ME</div></div></header>
+        <header className="mobile-header"><Link href="/" className="mobile-brand" aria-label="Focus Hub 홈"><span className="mobile-brand-mark"><Icon name="target" /></span><span>Focus <b>Hub</b></span></Link><div className="mobile-header-actions"><button type="button" className="icon-button" aria-label="알림"><Icon name="bell" /></button><Link className="profile-dot" href="/settings" aria-label="프로필 및 설정">ME</Link></div></header>
         {children}
       </div>
       <MobileBottomNav />
-      <button className="fab" aria-label="빠른 추가" onClick={() => setQuickType("빠른 추가")}>＋</button>
+      <button className="fab" aria-label="빠른 추가" onClick={() => setQuickType("빠른 추가")}><Icon name="plus" /></button>
       <Modal open={Boolean(quickType)} title={quickType ?? "빠른 추가"} onClose={() => setQuickType(null)}>
         <QuickAddForm type={quickType ?? ""} onDone={() => setQuickType(null)} />
       </Modal>

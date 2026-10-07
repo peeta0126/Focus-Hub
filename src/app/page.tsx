@@ -7,6 +7,7 @@ import { TodayHabits } from "@/components/dashboard/TodayHabits";
 import { TodayTasks } from "@/components/dashboard/TodayTasks";
 import { WeatherCard } from "@/components/dashboard/WeatherCard";
 import { WeeklyCalendar } from "@/components/dashboard/WeeklyCalendar";
+import { MobileDashboardOverview, MobileQuickActions } from "@/components/dashboard/MobileDashboardOverview";
 import { AssetImage } from "@/components/common/AssetImage";
 import { DASHBOARD_ASSETS } from "@/lib/assets";
 import { addDaysToDateString, DEFAULT_TIME_ZONE, getLocalDateString, getWeekDateStrings, isDueWithinHours } from "@/lib/date";
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
   let urgentTasks: Task[] = [];
   let timeZone = DEFAULT_TIME_ZONE;
   let weatherLocation = "충주시";
+  let displayName = "오늘";
   const supabase = await createClient();
 
   if (supabase) {
@@ -33,6 +35,7 @@ export default async function DashboardPage() {
     }
     if (authError) console.error("Failed to read dashboard user", authError);
     if (user) {
+    displayName = String(user.user_metadata?.display_name ?? user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "오늘");
     const settingsResult = await supabase.from("settings").select("timezone,weather_location").eq("user_id", user.id).maybeSingle();
     if (settingsResult.error) console.error("Failed to load dashboard settings", settingsResult.error);
     timeZone = settingsResult.data?.timezone || DEFAULT_TIME_ZONE;
@@ -72,12 +75,14 @@ export default async function DashboardPage() {
   return <main className="page-wrap">
     <div className="dashboard-intro">
       <div className="intro-art"><AssetImage src={DASHBOARD_ASSETS.hero} alt="달빛이 비치는 아늑한 야간 작업실" sizes="(max-width: 1024px) 100vw, calc(100vw - 224px)" priority /></div>
-      <div className="intro-copy"><span className="eyebrow">GOOD EVENING,</span><h1>오늘도 차분하게 시작해볼까요?</h1><p>할 일과 기록을 한눈에 확인하고, 가장 중요한 일에 집중하세요.</p></div>
+      <div className="intro-copy"><span className="eyebrow">FOCUS HUB</span><h1>좋은 하루예요, <em>{displayName}</em>!</h1><p>오늘의 집중이 더 나은 내일을 만들어요.</p></div>
       <span className="sync-state">● 데이터 준비됨</span>
     </div>
+    <MobileDashboardOverview tasks={dashboard.tasks} goals={dailyGoals} habits={dashboard.habits} notes={dashboard.notes} />
     <div className="dashboard-grid">
       <ClockCard /><WeatherCard location={weatherLocation} /><TodayGoals dailyGoals={dailyGoals} urgentTasks={urgentTasks} timeZone={timeZone} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} />
       <WeeklyCalendar events={dashboard.events} timeZone={timeZone} /><ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} />
     </div>
+    <MobileQuickActions />
   </main>;
 }
