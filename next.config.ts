@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: { root: process.cwd() },
 
-  allowedDevOrigins: ["192.168.35.107"],
+  allowedDevOrigins: ["10.10.21.33"],
+
 };
 
 export default nextConfig;

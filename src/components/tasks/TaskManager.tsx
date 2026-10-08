@@ -18,6 +18,7 @@ const schema = z.object({
   status: z.enum(["todo", "in_progress", "done"]),
   priority: z.enum(["low", "medium", "high"]),
   category: z.string().min(1),
+  projectId: z.string(),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "마감일을 선택해주세요."),
   dueTime: z.string(),
 });
@@ -30,6 +31,7 @@ const createDefaults = (): Values => ({
   status: "todo",
   priority: "medium",
   category: "개인",
+  projectId: "",
   dueDate: getLocalDateString(),
   dueTime: "",
 });
@@ -38,6 +40,7 @@ const statusLabel = { todo: "할 일", in_progress: "진행 중", done: "완료"
 const priorityLabel = { low: "낮음", medium: "보통", high: "높음" };
 export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) {
   const [items, setItems] = useState<Task[]>([]);
+  const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | "today" | "upcoming" | "done">("all");
   const [sort, setSort] = useState("due");
@@ -55,9 +58,14 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
     if (!supabase) { console.error("Supabase is not configured"); return; }
     supabase.auth.getUser().then(async ({ data: { user }, error: authError }) => {
       if (authError || !user) { setError("로그인 정보를 확인하지 못했습니다."); return; }
-      const { data, error: queryError } = await supabase.from("tasks").select("*").eq("user_id", user.id).order("due_date");
-      if (queryError) { console.error("Failed to load tasks", queryError); setError("할 일을 불러오지 못했습니다."); return; }
-      setItems((data ?? []).map((row) => ({
+      const [tasksResult, projectsResult] = await Promise.all([
+        supabase.from("tasks").select("*").eq("user_id", user.id).order("due_date"),
+        supabase.from("projects").select("id,title").eq("user_id", user.id).order("updated_at", { ascending: false }),
+      ]);
+      if (tasksResult.error) { console.error("Failed to load tasks", tasksResult.error); setError("할 일을 불러오지 못했습니다."); return; }
+      if (projectsResult.error) console.error("Failed to load task projects", projectsResult.error);
+      setProjects(projectsResult.data ?? []);
+      setItems((tasksResult.data ?? []).map((row) => ({
         id: row.id,
         title: row.title,
         description: row.description,
@@ -107,6 +115,7 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
       status: task.status,
       priority: task.priority,
       category: task.category,
+      projectId: task.projectId ?? "",
       dueDate: task.dueDate,
       dueTime: task.dueTime ?? "",
     });
@@ -129,6 +138,7 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
       status: task.status,
       priority: task.priority,
       category: task.category,
+      project_id: emptyStringToNull(task.projectId),
       due_date: task.dueDate,
       due_time: emptyStringToNull(task.dueTime),
     };
@@ -224,6 +234,7 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
         <div className="field"><label htmlFor="description">설명</label><textarea id="description" className="input" {...register("description")} /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div className="field"><label htmlFor="status">상태</label><select id="status" className="input" {...register("status")}><option value="todo">할 일</option><option value="in_progress">진행 중</option><option value="done">완료</option></select></div><div className="field"><label htmlFor="priority">우선순위</label><select id="priority" className="input" {...register("priority")}><option value="low">낮음</option><option value="medium">보통</option><option value="high">높음</option></select></div></div>
         <div className="field"><label htmlFor="category">카테고리</label><select id="category" className="input" {...register("category")}>{editing?.category && !TASK_CATEGORIES.includes(editing.category as (typeof TASK_CATEGORIES)[number]) && <option value={editing.category}>{editing.category} (기존 값)</option>}{TASK_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>
+        <div className="field"><label htmlFor="projectId">연결 프로젝트</label><select id="projectId" className="input" {...register("projectId")}><option value="">연결 안 함</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div className="field"><label htmlFor="dueDate">마감일</label><input id="dueDate" type="date" className="input" required aria-invalid={Boolean(errors.dueDate)} {...register("dueDate")} />{errors.dueDate && <small className="field-error">{errors.dueDate.message}</small>}</div><div className="field"><label htmlFor="dueTime">마감 시간</label><input id="dueTime" type="time" className="input" {...register("dueTime")} /></div></div>
         <div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary" disabled={isSubmitting}>저장</button></div>
       </form>

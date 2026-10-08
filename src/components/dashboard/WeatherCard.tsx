@@ -25,6 +25,15 @@ type WeatherData = {
   forecast: Array<{ date: string; high: number; low: number }>;
 };
 
+async function measureWeatherStep<T>(label: string, operation: () => Promise<T>): Promise<T> {
+  const startedAt = performance.now();
+  try {
+    return await operation();
+  } finally {
+    console.info(`[home-performance] ${label}: ${(performance.now() - startedAt).toFixed(1)} ms`);
+  }
+}
+
 function locationCandidates(location: string) {
   const original = location.trim();
   const withoutSuffix = original.replace(/\s*(특별자치시|특별자치도|특별시|광역시|자치구|시|군|구|도)$/u, "").trim();
@@ -52,7 +61,7 @@ async function findCoordinates(location: string) {
 
 async function getWeather(location: string): Promise<WeatherData | null> {
   try {
-    const coordinates = await findCoordinates(location);
+    const coordinates = await measureWeatherStep("weather-geocoding", () => findCoordinates(location));
     if (!coordinates) return null;
     const params = new URLSearchParams({
       latitude: String(coordinates.latitude),
@@ -62,7 +71,7 @@ async function getWeather(location: string): Promise<WeatherData | null> {
       timezone: "auto",
       forecast_days: "5",
     });
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { next: { revalidate: REVALIDATE_SECONDS }, signal: AbortSignal.timeout(5000) });
+    const response = await measureWeatherStep("weather-forecast", () => fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { next: { revalidate: REVALIDATE_SECONDS }, signal: AbortSignal.timeout(5000) }));
     if (!response.ok) return null;
     const data = await response.json() as ForecastResponse;
     if (!data.current || !data.daily) return null;
@@ -104,7 +113,7 @@ function weekday(date: string) {
 }
 
 export async function WeatherCard({ location }: { location: string }) {
-  const weather = await getWeather(location);
+  const weather = await measureWeatherStep("weather-total", () => getWeather(location));
 
   if (!weather) {
     return <section className="card card-pad weather-card"><div className="card-header"><h2 className="card-title">오늘의 날씨</h2><span className="card-meta">{location}</span></div><div className="weather-now"><div><span>{location} 날씨 정보를 불러오지 못했습니다.</span></div></div></section>;

@@ -18,7 +18,11 @@ export async function proxy(request: NextRequest) {
     },
   });
 
+  const authStartedAt = performance.now();
   const { data: { user } } = await supabase.auth.getUser();
+  if (request.nextUrl.pathname === "/") {
+    console.info(`[home-performance] proxy-auth: ${(performance.now() - authStartedAt).toFixed(1)} ms`);
+  }
   const isLogin = request.nextUrl.pathname === "/login";
   if (!user && !isLogin) return NextResponse.redirect(new URL("/login", request.url));
   if (user && isLogin) return NextResponse.redirect(new URL("/", request.url));

@@ -16,17 +16,28 @@ import type { CalendarEvent, DailyGoal, Goal, Habit, Note, Priority, Project, Pr
 import { redirect } from "next/navigation";
 import "./dashboard.css";
 
+async function measureHomeStep<T>(label: string, operation: () => PromiseLike<T>): Promise<T> {
+  const startedAt = performance.now();
+  try {
+    return await operation();
+  } finally {
+    console.info(`[home-performance] ${label}: ${(performance.now() - startedAt).toFixed(1)} ms`);
+  }
+}
+
 export default async function DashboardPage() {
+  // eslint-disable-next-line react-hooks/purity -- Temporary server-side performance instrumentation.
+  const pageStartedAt = performance.now();
   let dashboard: { tasks: Task[]; projects: Project[]; goals: Goal[]; habits: Habit[]; notes: Note[]; events: CalendarEvent[] } = { tasks: [], projects: [], goals: [], habits: [], notes: [], events: [] };
   let dailyGoals: DailyGoal[] = [];
   let urgentTasks: Task[] = [];
   let timeZone = DEFAULT_TIME_ZONE;
   let weatherLocation = "충주시";
   let displayName = "오늘";
-  const supabase = await createClient();
+  const supabase = await measureHomeStep("create-client", () => createClient());
 
   if (supabase) {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await measureHomeStep("auth", () => supabase.auth.getUser());
     if (!user) {
       if (authError && authError.name !== "AuthSessionMissingError") {
         console.error("Failed to read dashboard user", authError);
@@ -36,7 +47,7 @@ export default async function DashboardPage() {
     if (authError) console.error("Failed to read dashboard user", authError);
     if (user) {
     displayName = String(user.user_metadata?.display_name ?? user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "오늘");
-    const settingsResult = await supabase.from("settings").select("timezone,weather_location").eq("user_id", user.id).maybeSingle();
+    const settingsResult = await measureHomeStep("settings", () => supabase.from("settings").select("timezone,weather_location").eq("user_id", user.id).maybeSingle());
     if (settingsResult.error) console.error("Failed to load dashboard settings", settingsResult.error);
     timeZone = settingsResult.data?.timezone || DEFAULT_TIME_ZONE;
     weatherLocation = settingsResult.data?.weather_location?.trim() || weatherLocation;
@@ -44,15 +55,15 @@ export default async function DashboardPage() {
     const tomorrow = addDaysToDateString(today, 1);
     const week = getWeekDateStrings(today);
     const [tasksResult, urgentTasksResult, dailyGoalsResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult] = await Promise.all([
-      supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").order("due_date").order("due_time", { nullsFirst: false }).limit(8),
-      supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").gte("due_date", today).lte("due_date", tomorrow).order("due_date").order("due_time", { nullsFirst: false }),
-      supabase.from("daily_goals").select("*").eq("user_id", user.id).eq("goal_date", today).order("created_at"),
-      supabase.from("projects").select("*").eq("user_id", user.id).in("status", ["active", "planning"]).order("updated_at", { ascending: false }).limit(3),
-      supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "active").order("updated_at", { ascending: false }).limit(5),
-      supabase.from("habits").select("*").eq("user_id", user.id).eq("active", true).limit(6),
-      supabase.from("habit_records").select("habit_id,completed").eq("user_id", user.id).eq("date", today),
-      supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(5),
-      supabase.from("events").select("*").eq("user_id", user.id).gte("event_date", week[0]).lte("event_date", week[6]).order("event_date"),
+      measureHomeStep("tasks", () => supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").order("due_date").order("due_time", { nullsFirst: false }).limit(8)),
+      measureHomeStep("urgent-tasks", () => supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").gte("due_date", today).lte("due_date", tomorrow).order("due_date").order("due_time", { nullsFirst: false })),
+      measureHomeStep("daily-goals", () => supabase.from("daily_goals").select("*").eq("user_id", user.id).eq("goal_date", today).order("created_at")),
+      measureHomeStep("projects", () => supabase.from("projects").select("*,tasks(status)").eq("user_id", user.id).in("status", ["active", "planning"]).order("updated_at", { ascending: false }).limit(3)),
+      measureHomeStep("goals", () => supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "active").order("updated_at", { ascending: false }).limit(5)),
+      measureHomeStep("habits", () => supabase.from("habits").select("*").eq("user_id", user.id).eq("active", true).limit(6)),
+      measureHomeStep("habit-records", () => supabase.from("habit_records").select("habit_id,completed").eq("user_id", user.id).eq("date", today)),
+      measureHomeStep("notes", () => supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(5)),
+      measureHomeStep("planner", () => supabase.from("events").select("*").eq("user_id", user.id).gte("event_date", week[0]).lte("event_date", week[6]).order("event_date")),
     ]);
     for (const [name, result] of Object.entries({ tasksResult, urgentTasksResult, dailyGoalsResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult })) {
       if (result.error) console.error(`Failed to load dashboard ${name}`, result.error);
@@ -63,7 +74,11 @@ export default async function DashboardPage() {
     const completed = new Set((recordsResult.data ?? []).filter((row) => row.completed).map((row) => row.habit_id));
     dashboard = {
       tasks: (tasksResult.data ?? []).map(mapTask),
-      projects: (projectsResult.data ?? []).map((row): Project => ({ id: row.id, title: row.title, description: row.description, thumbnail: row.thumbnail ?? "", status: row.status as ProjectStatus, progress: row.progress, startDate: row.start_date ?? "", dueDate: row.due_date ?? undefined, githubUrl: row.github_url ?? undefined, deployUrl: row.deploy_url ?? undefined, memo: row.memo ?? undefined, updatedAt: new Date(row.updated_at).toLocaleDateString("ko-KR", { timeZone }) })),
+      projects: (projectsResult.data ?? []).map((row): Project => {
+        const linkedTasks = row.tasks ?? [];
+        const completedTasks = linkedTasks.filter((task: { status: string }) => task.status === "done").length;
+        return { id: row.id, title: row.title, description: row.description, thumbnail: row.thumbnail ?? "", status: row.status as ProjectStatus, progress: linkedTasks.length === 0 ? 0 : Math.round((completedTasks / linkedTasks.length) * 100), startDate: row.start_date ?? "", dueDate: row.due_date ?? undefined, githubUrl: row.github_url ?? undefined, deployUrl: row.deploy_url ?? undefined, memo: row.memo ?? undefined, updatedAt: new Date(row.updated_at).toLocaleDateString("ko-KR", { timeZone }) };
+      }),
       goals: (goalsResult.data ?? []).map((row): Goal => ({ id: row.id, title: row.title, description: row.description, category: row.category, progress: row.progress, targetDate: row.target_date ?? "", status: row.status as Goal["status"], icon: row.icon ?? "◎" })),
       habits: (habitsResult.data ?? []).map((row): Habit => ({ id: row.id, title: row.title, icon: row.icon ?? "✓", frequency: row.frequency as Habit["frequency"], targetCount: row.target_count, active: row.active, completedToday: completed.has(row.id) })),
       notes: (notesResult.data ?? []).map((row): Note => ({ id: row.id, title: row.title, content: row.content, tags: row.tags ?? [], category: row.category, updatedAt: new Date(row.updated_at).toLocaleDateString("ko-KR", { timeZone }) })),
@@ -71,6 +86,9 @@ export default async function DashboardPage() {
     };
     }
   }
+
+  // eslint-disable-next-line react-hooks/purity -- Temporary server-side performance instrumentation.
+  console.info(`[home-performance] page-data-total: ${(performance.now() - pageStartedAt).toFixed(1)} ms`);
 
   return <main className="page-wrap">
     <div className="dashboard-intro">
