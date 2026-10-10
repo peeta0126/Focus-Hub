@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <Sidebar onQuickAdd={setQuickType} />
       <div className="main-area">
-        <header className="topbar"><div className="topbar-path">Focus Hub&nbsp; / &nbsp;<span style={{ color: "var(--text-primary)" }}>{section}</span></div><div className="topbar-actions"><ThemeToggle /><a className="icon-button" href="/settings" aria-label="설정"><Icon name="settings" /></a><div className="profile-dot" title="내 프로필">ME</div></div></header>
+        <header className="topbar"><div className="topbar-path">Focus Hub&nbsp; / &nbsp;<span style={{ color: "var(--text-primary)" }}>{section}</span></div><div className="topbar-actions"><ThemeToggle /><Link className="icon-button" href="/settings" aria-label="설정"><Icon name="settings" /></Link><div className="profile-dot" title="내 프로필">ME</div></div></header>
         <header className="mobile-header"><Link href="/" className="mobile-brand" aria-label="Focus Hub 홈"><span className="mobile-brand-mark"><Icon name="target" /></span><span>Focus <b>Hub</b></span></Link><div className="mobile-header-actions"><button type="button" className="icon-button" aria-label="알림"><Icon name="bell" /></button><Link className="profile-dot" href="/settings" aria-label="프로필 및 설정">ME</Link></div></header>
         {children}
       </div>

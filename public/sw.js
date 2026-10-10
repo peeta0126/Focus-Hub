@@ -1,4 +1,4 @@
-const CACHE = "focus-hub-static-v2";
+const CACHE = "focus-hub-static-v3";
 const PRECACHE = ["/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -15,6 +15,7 @@ function isPublicStaticAsset(request) {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return false;
   if (request.mode === "navigate" || request.destination === "document") return false;
+  if (request.headers.has("range")) return false;
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return false;
   return url.pathname.startsWith("/_next/static/")
     || url.pathname.startsWith("/assets/")

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssetImage } from "./AssetImage";
 import { Modal } from "./Modal";
@@ -143,7 +144,7 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
     <div className={cardMode ? "section-grid" : "card content-card data-list"}>
       {visible.map((item) => cardMode ? <article className="card entity-card" key={item.id}>
         {typeof item.thumbnail === "string" && <div className="entity-thumbnail"><AssetImage src={item.thumbnail} alt={`${item.title} 썸네일`} sizes="(max-width: 767px) 100vw, 33vw" /></div>}
-        <h3>{detailBase ? <a href={`${detailBase}/${item.id}`}>{item.title}</a> : item.title}</h3><p>{item.description}</p>
+        <h3>{detailBase ? <Link href={`${detailBase}/${item.id}`}>{item.title}</Link> : item.title}</h3><p>{item.description}</p>
         {typeof item.progress === "number" && <div className="progress-track"><div className="progress-fill" style={{ width: `${item.progress}%` }} /></div>}
         <div className="entity-meta"><span>{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></div>
       </article> : <article className="data-row" key={item.id}><div className="data-main"><strong>{item.title}</strong><p>{item.description || renderMeta(item)}</p></div><span className="status-pill">{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></article>)}
