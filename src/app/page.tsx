@@ -28,7 +28,7 @@ async function measureHomeStep<T>(label: string, operation: () => PromiseLike<T>
 export default async function DashboardPage() {
   // eslint-disable-next-line react-hooks/purity -- Temporary server-side performance instrumentation.
   const pageStartedAt = performance.now();
-  let dashboard: { tasks: Task[]; projects: Project[]; goals: Goal[]; habits: Habit[]; notes: Note[]; events: CalendarEvent[] } = { tasks: [], projects: [], goals: [], habits: [], notes: [], events: [] };
+  let dashboard: { tasks: Task[]; calendarTasks: Task[]; projects: Project[]; goals: Goal[]; habits: Habit[]; notes: Note[]; events: CalendarEvent[] } = { tasks: [], calendarTasks: [], projects: [], goals: [], habits: [], notes: [], events: [] };
   let dailyGoals: DailyGoal[] = [];
   let urgentTasks: Task[] = [];
   let timeZone = DEFAULT_TIME_ZONE;
@@ -54,8 +54,9 @@ export default async function DashboardPage() {
     const today = getLocalDateString(timeZone);
     const tomorrow = addDaysToDateString(today, 1);
     const week = getWeekDateStrings(today);
-    const [tasksResult, urgentTasksResult, dailyGoalsResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult] = await Promise.all([
+    const [tasksResult, calendarTasksResult, urgentTasksResult, dailyGoalsResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult] = await Promise.all([
       measureHomeStep("tasks", () => supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").order("due_date").order("due_time", { nullsFirst: false }).limit(8)),
+      measureHomeStep("calendar-tasks", () => supabase.from("tasks").select("*").eq("user_id", user.id).gte("due_date", week[0]).lte("due_date", week[6]).order("due_date").order("due_time", { nullsFirst: false })),
       measureHomeStep("urgent-tasks", () => supabase.from("tasks").select("*").eq("user_id", user.id).neq("status", "done").gte("due_date", today).lte("due_date", tomorrow).order("due_date").order("due_time", { nullsFirst: false })),
       measureHomeStep("daily-goals", () => supabase.from("daily_goals").select("*").eq("user_id", user.id).eq("goal_date", today).order("created_at")),
       measureHomeStep("projects", () => supabase.from("projects").select("*,tasks(status)").eq("user_id", user.id).in("status", ["active", "planning"]).order("updated_at", { ascending: false }).limit(3)),
@@ -65,7 +66,7 @@ export default async function DashboardPage() {
       measureHomeStep("notes", () => supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(5)),
       measureHomeStep("planner", () => supabase.from("events").select("*").eq("user_id", user.id).gte("event_date", week[0]).lte("event_date", week[6]).order("event_date")),
     ]);
-    for (const [name, result] of Object.entries({ tasksResult, urgentTasksResult, dailyGoalsResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult })) {
+    for (const [name, result] of Object.entries({ tasksResult, calendarTasksResult, urgentTasksResult, dailyGoalsResult, projectsResult, goalsResult, habitsResult, recordsResult, notesResult, eventsResult })) {
       if (result.error) console.error(`Failed to load dashboard ${name}`, result.error);
     }
     const mapTask = (row: (typeof tasksResult.data extends Array<infer Item> | null ? Item : never)): Task => ({ id: row.id, title: row.title, description: row.description, status: row.status as TaskStatus, priority: row.priority as Priority, category: row.category, dueDate: row.due_date ?? "", dueTime: row.due_time ?? undefined, projectId: row.project_id ?? undefined });
@@ -74,6 +75,7 @@ export default async function DashboardPage() {
     const completed = new Set((recordsResult.data ?? []).filter((row) => row.completed).map((row) => row.habit_id));
     dashboard = {
       tasks: (tasksResult.data ?? []).map(mapTask),
+      calendarTasks: (calendarTasksResult.data ?? []).map(mapTask),
       projects: (projectsResult.data ?? []).map((row): Project => {
         const linkedTasks = row.tasks ?? [];
         const completedTasks = linkedTasks.filter((task: { status: string }) => task.status === "done").length;
@@ -99,7 +101,7 @@ export default async function DashboardPage() {
     <MobileDashboardOverview tasks={dashboard.tasks} goals={dailyGoals} habits={dashboard.habits} notes={dashboard.notes} />
     <div className="dashboard-grid">
       <ClockCard /><WeatherCard location={weatherLocation} /><TodayGoals dailyGoals={dailyGoals} urgentTasks={urgentTasks} timeZone={timeZone} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} />
-      <WeeklyCalendar events={dashboard.events} timeZone={timeZone} /><ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} />
+      <WeeklyCalendar events={dashboard.events} tasks={dashboard.calendarTasks} timeZone={timeZone} /><ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} />
     </div>
     <MobileQuickActions />
   </main>;

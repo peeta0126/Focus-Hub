@@ -117,6 +117,7 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
     }
     setError("");
     setToast(editing ? "항목을 수정했습니다." : "새 항목을 추가했습니다.");
+    window.dispatchEvent(new CustomEvent("focus-hub:data-changed", { detail: { table } }));
     close();
   };
   const remove = async (item: SimpleEntity) => {
@@ -131,6 +132,7 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
     if (deleteError) { console.error(`Failed to delete ${table}`, deleteError); setItems(previousItems); setError("삭제하지 못했습니다."); return; }
     setError("");
     setToast("항목을 삭제했습니다.");
+    window.dispatchEvent(new CustomEvent("focus-hub:data-changed", { detail: { table } }));
   };
 
   const week = getWeekDateStrings(selectedDate);
