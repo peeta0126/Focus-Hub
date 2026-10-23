@@ -1,0 +1,46 @@
+{
+  "measuredAt": "2026-10-22",
+  "route": "http://127.0.0.1:3100/login",
+  "baselineCommit": "a94235aa8657cd7f560cfa845704f2c6efe400bd",
+  "environment": {
+    "os": "Windows 10/11",
+    "node": "24.14.0",
+    "npm": "11.12.1",
+    "next": "16.3.8",
+    "lighthouse": "13.5.0",
+    "chrome": "155.0.0.0",
+    "server": "next start on 127.0.0.1:3100",
+    "formFactor": "mobile",
+    "viewport": "412x823 at 1.75 DPR",
+    "throttling": {
+      "method": "simulate",
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "cpuSlowdownMultiplier": 4
+    },
+    "storageResetBetweenRuns": true,
+    "runsPerVersion": 5
+  },
+  "baseline": [
+    { "run": 1, "score": 94, "fcpMs": 909.2978, "lcpMs": 3052.27115, "cls": 0, "tbtMs": 69.5, "interactiveMs": 3442.038705, "totalBytes": 424872, "requests": 16, "jsBytes": 323800, "jsRequests": 9 },
+    { "run": 2, "score": 94, "fcpMs": 910.1179, "lcpMs": 3047.706325, "cls": 0, "tbtMs": 55.5, "interactiveMs": 3437.4533775, "totalBytes": 424871, "requests": 16, "jsBytes": 323800, "jsRequests": 9 },
+    { "run": 3, "score": 94, "fcpMs": 909.241, "lcpMs": 3058.17175, "cls": 0, "tbtMs": 62.5, "interactiveMs": 3447.940725, "totalBytes": 424871, "requests": 16, "jsBytes": 323800, "jsRequests": 9 },
+    { "run": 4, "score": 94, "fcpMs": 909.9068, "lcpMs": 3049.3369, "cls": 0, "tbtMs": 77.5, "interactiveMs": 3439.08923, "totalBytes": 424871, "requests": 16, "jsBytes": 323800, "jsRequests": 9 },
+    { "run": 5, "score": 94, "fcpMs": 910.2615, "lcpMs": 3050.957625, "cls": 0, "tbtMs": 57, "interactiveMs": 3440.7010875, "totalBytes": 424871, "requests": 16, "jsBytes": 323800, "jsRequests": 9 }
+  ],
+  "experiments": [
+    { "name": "lazy quick-add modal", "medianJsBytes": 322385, "medianLcpMs": 2976.152275, "note": "JS was only 0.44% smaller on /login, so the remaining static Supabase import was investigated." },
+    { "name": "defer Supabase login SDK", "medianJsBytes": 254552, "medianLcpMs": 2646.938075, "note": "Removed one initial JS request; login submission still loaded the SDK and reached Supabase." }
+  ],
+  "final": [
+    { "run": 1, "score": 97, "fcpMs": 942.1577, "lcpMs": 2635.23655, "cls": 0, "tbtMs": 23.5, "interactiveMs": 2642.73655, "totalBytes": 252745, "requests": 14, "jsBytes": 151713, "jsRequests": 7 },
+    { "run": 2, "score": 98, "fcpMs": 909.7737, "lcpMs": 2440.66055, "cls": 0, "tbtMs": 25.5, "interactiveMs": 2530.66055, "totalBytes": 252745, "requests": 14, "jsBytes": 151713, "jsRequests": 7 },
+    { "run": 3, "score": 97, "fcpMs": 908.4082, "lcpMs": 2512.6123, "cls": 0, "tbtMs": 25, "interactiveMs": 2527.6123, "totalBytes": 252745, "requests": 14, "jsBytes": 151713, "jsRequests": 7 },
+    { "run": 4, "score": 99, "fcpMs": 908.811, "lcpMs": 2131.01375, "cls": 0, "tbtMs": 22.5, "interactiveMs": 2523.2165, "totalBytes": 252745, "requests": 14, "jsBytes": 151713, "jsRequests": 7 },
+    { "run": 5, "score": 99, "fcpMs": 909.0612, "lcpMs": 2126.3265, "cls": 0, "tbtMs": 20, "interactiveMs": 2518.5918, "totalBytes": 252745, "requests": 14, "jsBytes": 151713, "jsRequests": 7 }
+  ],
+  "medians": {
+    "baseline": { "score": 94, "fcpMs": 909.9068, "lcpMs": 3050.957625, "cls": 0, "tbtMs": 62.5, "interactiveMs": 3440.7010875, "totalBytes": 424871, "requests": 16, "jsBytes": 323800, "jsRequests": 9 },
+    "final": { "score": 98, "fcpMs": 909.0612, "lcpMs": 2440.66055, "cls": 0, "tbtMs": 23.5, "interactiveMs": 2527.6123, "totalBytes": 252745, "requests": 14, "jsBytes": 151713, "jsRequests": 7 }
+  }
+}
