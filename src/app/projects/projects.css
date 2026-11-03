@@ -36,6 +36,11 @@
 .project-cards.is-list { grid-template-columns: 1fr; }
 .project-card { position: relative; min-width: 0; border: 1px solid var(--border); border-radius: 18px; background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 97%, var(--secondary) 3%), var(--surface)); box-shadow: var(--shadow); transition: border-color .18s ease, transform .18s ease; }
 .project-card:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); transform: translateY(-2px); }
+.project-card.has-background::before,
+.project-card.has-background::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.project-card.has-background::before { background-image: var(--project-card-background); background-size: cover; background-position: center; opacity: .42; filter: saturate(.55) brightness(.72); }
+.project-card.has-background::after { background: rgba(23, 25, 29, .52); }
+.project-card.has-background .project-card-link { position: relative; z-index: 1; }
 .project-card-link { min-height: 224px; display: flex; flex-direction: column; padding: 22px; }
 .project-card-top { display: flex; align-items: center; gap: 14px; padding-right: 44px; }
 .project-card-icon { width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--secondary) 12%, transparent); color: var(--secondary); font-size: 1.15rem; font-weight: 800; }

@@ -13,4 +13,10 @@
 .login-error { border: 1px solid rgba(255,117,133,.2); background: rgba(255,117,133,.06); padding: 10px; border-radius: 7px; }
 .login-button { width: 100%; }
 .login-note { color: var(--muted); text-align: center; font-size: .65rem; }
+.auth-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 18px; font-size: .78rem; }
+.auth-links a { color: var(--subtext); text-decoration: underline; text-underline-offset: 4px; padding: 6px 0; }
+.auth-links a:hover { color: var(--text-primary); }
+.auth-links a:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 4px; border-radius: 3px; }
+.login-form .auth-success { color: var(--text-primary); border: 1px solid var(--line); background: var(--bg); padding: 12px; border-radius: 7px; line-height: 1.7; overflow-wrap: anywhere; }
+.auth-hint { color: var(--subtext); font-size: .75rem; }
 @media (max-width: 767px) { .login-page { display: block; } .login-art { display: none; } .login-panel { min-height: 100dvh; padding: 24px; } }

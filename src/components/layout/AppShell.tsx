@@ -1,11 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Icon } from "@/components/common/Icon";
 import { createClient } from "@/lib/supabase/client";
+import { AUTH_FORM_PATHS } from "@/lib/auth";
 import { Sidebar } from "./Sidebar";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { ThemeToggle } from "./ThemeToggle";
@@ -16,7 +17,6 @@ const pathNames: Record<string, string> = { tasks: "할 일 관리", planner: "�
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [quickType, setQuickType] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
@@ -31,8 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (!supabase) throw new Error("Supabase is not configured");
       const { error } = await supabase.auth.signOut({ scope: "local" });
       if (error) throw error;
-      router.replace("/login");
-      router.refresh();
+      window.location.replace("/login");
     } catch (error) {
       console.error("Failed to sign out", error);
       setLogoutError("로그아웃하지 못했습니다. 다시 시도해주세요.");
@@ -41,7 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   };
 
-  if (pathname === "/login") return children;
+  if (AUTH_FORM_PATHS.includes(pathname)) return children;
   return (
     <div className="app-shell">
       <Sidebar onQuickAdd={setQuickType} />

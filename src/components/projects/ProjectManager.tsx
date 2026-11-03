@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Icon } from "@/components/common/Icon";
 import { Modal } from "@/components/common/Modal";
 import { Toast } from "@/components/common/Toast";
+import { getProjectThumbnail } from "@/lib/assets";
 import { emptyStringToNull } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
 import type { ProjectStatus } from "@/lib/types";
@@ -190,7 +191,9 @@ export function ProjectManager({ initialProjects, userId }: { initialProjects: P
     <section className={`project-cards ${view === "list" ? "is-list" : ""}`}>
       {visible.map((project) => {
         const { total, completed, progress } = taskStats(project);
-        return <article className="project-card" key={project.id}>
+        const backgroundImage = getProjectThumbnail(project.title);
+        const backgroundStyle = backgroundImage ? { "--project-card-background": `url("${backgroundImage}")` } as CSSProperties : undefined;
+        return <article className={`project-card ${backgroundImage ? "has-background" : ""}`} style={backgroundStyle} key={project.id}>
           <Link href={`/projects/${project.id}`} className="project-card-link" aria-label={`${project.title} 상세 보기`}>
             <div className="project-card-top">
               <span className="project-card-icon" aria-hidden="true">{project.title.slice(0, 1).toUpperCase()}</span>
