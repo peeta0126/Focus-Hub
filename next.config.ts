@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.FOCUS_HUB_TEST_BUILD === "1" ? ".next-test" : ".next",
+  devIndicators: process.env.FOCUS_HUB_TEST_BUILD === "1" ? false : undefined,
   reactStrictMode: true,
   turbopack: { root: process.cwd() },
   allowedDevOrigins: ["10.10.21.33"],

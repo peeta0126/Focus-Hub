@@ -55,6 +55,7 @@ export function TodayGoals({ dailyGoals, urgentTasks, timeZone }: { dailyGoals: 
   };
 
   const remove = async (item: Extract<TodayGoalItem, { source: "daily_goal" }>) => {
+    if (!window.confirm(`“${item.title}”을 삭제할까요?`)) return;
     const previousItems = items;
     setItems((current) => current.filter((value) => value.source !== item.source || value.id !== item.id));
     const supabase = createClient();

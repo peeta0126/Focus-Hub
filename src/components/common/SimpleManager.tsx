@@ -7,8 +7,9 @@ import { Modal } from "./Modal";
 import { Toast } from "./Toast";
 import { createClient } from "@/lib/supabase/client";
 import { createUuid } from "@/lib/uuid";
-import { addDaysToDateString, getLocalDateString, getWeekDateStrings } from "@/lib/date";
-import { Icon } from "./Icon";
+import { getLocalDateString } from "@/lib/date";
+import { CalendarPicker } from "./CalendarPicker";
+import { LoadingSkeleton } from "./LoadingSkeleton";
 
 export type SimpleValue = string | number | boolean | string[];
 export type SimpleEntity = { id: string; title: string; description: string; [key: string]: SimpleValue };
@@ -29,7 +30,9 @@ interface SimpleManagerProps {
 }
 
 export function SimpleManager({ table, initial, fields, emptyText, renderMeta, toDatabase, cardMode = false, detailBase, isItemLocked, lockedItemMessage, mobileTimeline = false }: SimpleManagerProps) {
+  const entityLabel = ({ events: "일정", goals: "목표", habits: "습관", cs_study_logs: "학습 기록", resources: "자료" } as Record<string, string>)[table] ?? "항목";
   const [items, setItems] = useState(initial);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SimpleEntity | null>(null);
@@ -42,10 +45,12 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
     const supabase = createClient();
     if (!supabase) {
       console.error("Supabase is not configured");
+      queueMicrotask(() => { setError("데이터베이스 연결 설정을 확인해주세요."); setLoading(false); });
       return;
     }
     supabase.auth.getUser().then(async ({ data: { user }, error: authError }) => {
       if (authError || !user) {
+        setLoading(false);
         setItems([]);
         setError("로그인 정보를 확인하지 못했습니다.");
         return;
@@ -53,11 +58,13 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
       const { data, error: queryError } = await supabase.from(table).select("*").eq("user_id", user.id).order("updated_at", { ascending: false });
       if (queryError) {
         console.error(`Failed to load ${table}`, queryError);
+        setLoading(false);
         setItems([]);
         setError("데이터를 불러오지 못했습니다.");
         return;
       }
       setError("");
+      setLoading(false);
       setItems((data ?? []).map((source) => {
         const row = source as Record<string, unknown>;
         const entity: SimpleEntity = { id: String(row.id), title: String(row.title), description: String(row.description ?? row.key_points ?? "") };
@@ -135,14 +142,13 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
     window.dispatchEvent(new CustomEvent("focus-hub:data-changed", { detail: { table } }));
   };
 
-  const week = getWeekDateStrings(selectedDate);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long", timeZone: "UTC" }).format(new Date(`${selectedDate}T12:00:00Z`));
   const timelineItems = visible.filter((item) => String(item.eventDate ?? "") === selectedDate).sort((a, b) => String(a.startTime ?? "99:99").localeCompare(String(b.startTime ?? "99:99")));
 
   return <>
-    {mobileTimeline && <section className="mobile-planner"><div className="planner-date-controls"><button type="button" aria-label="이전 주" onClick={() => setSelectedDate(addDaysToDateString(week[0], -7))}><Icon name="chevron-left" /></button><strong>{dateLabel}</strong><button type="button" aria-label="다음 주" onClick={() => setSelectedDate(addDaysToDateString(week[0], 7))}><Icon name="chevron-right" /></button><button type="button" className="today-button" onClick={() => setSelectedDate(getLocalDateString())}>오늘</button></div><div className="planner-week" role="tablist" aria-label="날짜 선택">{week.map((date) => { const weekday = new Intl.DateTimeFormat("ko-KR", { weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`)).replace("요일", ""); return <button key={date} type="button" role="tab" aria-selected={date === selectedDate} className={date === selectedDate ? "active" : ""} onClick={() => setSelectedDate(date)}><span>{weekday}</span><b>{Number(date.slice(-2))}</b></button>; })}</div><div className="mobile-timeline">{timelineItems.map((item) => <article key={item.id} className="timeline-row"><time>{String(item.startTime || "종일").slice(0, 5)}</time><div className="timeline-card"><div><strong>{item.title}</strong><p>{String(item.startTime || "시간 미정").slice(0, 5)}{item.endTime ? ` – ${String(item.endTime).slice(0, 5)}` : ""}</p></div><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></div></article>)}{timelineItems.length === 0 && <div className="timeline-empty">이 날의 일정이 비어 있어요.</div>}</div><button type="button" className="mobile-planner-add" onClick={() => { setEditing(null); setOpen(true); }}>＋ <span>새 일정 추가</span></button></section>}
-    <div className={mobileTimeline ? "desktop-manager" : undefined}><div className="toolbar"><div className="search-wrap"><input className="input" aria-label="검색" placeholder="제목이나 내용 검색" value={query} onChange={(event) => setQuery(event.target.value)} /></div><button type="button" className="button primary" onClick={() => { setEditing(null); setOpen(true); }}>＋ 새 항목</button></div>
     {error && <p className="field-error" role="alert">{error}</p>}
+    {mobileTimeline && <section className="planner-workspace"><div className="planner-search search-wrap"><input className="input" aria-label="일정 검색" placeholder="일정 제목이나 내용 검색" value={query} onChange={(event) => setQuery(event.target.value)} /></div><CalendarPicker selected={selectedDate} onSelect={setSelectedDate} items={visible.map((item) => ({ date: String(item.eventDate), title: item.title }))} /><div className="planner-agenda card card-pad"><div className="card-header"><div><span className="eyebrow">DAILY AGENDA</span><h2 className="card-title">{dateLabel}</h2></div><span className="count-badge">{timelineItems.length}개</span></div><div className="mobile-timeline">{timelineItems.map((item) => <article key={item.id} className="timeline-row"><time>{String(item.startTime || "종일").slice(0, 5)}</time><div className="timeline-card"><div><strong>{item.title}</strong><p>{String(item.startTime || "시간 미정").slice(0, 5)}{item.endTime ? ` – ${String(item.endTime).slice(0, 5)}` : ""}</p>{isItemLocked?.(item) && <Link className="linked-task-hint" href="/tasks">할 일에서 수정 →</Link>}</div><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></div></article>)}{loading ? <LoadingSkeleton /> : timelineItems.length === 0 && <div className="timeline-empty">이 날의 일정이 비어 있어요.</div>}</div><button type="button" className="mobile-planner-add" onClick={() => { setEditing(null); setOpen(true); }}>＋ <span>새 일정 추가</span></button></div></section>}
+    <div className={mobileTimeline ? "planner-all-items" : undefined}><div className="toolbar"><div className="search-wrap"><input className="input" aria-label="검색" placeholder="제목이나 내용 검색" value={query} onChange={(event) => setQuery(event.target.value)} /></div><button type="button" className="button primary" onClick={() => { setEditing(null); setOpen(true); }}>＋ 새 {entityLabel}</button></div>
     <div className={cardMode ? "section-grid" : "card content-card data-list"}>
       {visible.map((item) => cardMode ? <article className="card entity-card" key={item.id}>
         {typeof item.thumbnail === "string" && <div className="entity-thumbnail"><AssetImage src={item.thumbnail} alt={`${item.title} 썸네일`} sizes="(max-width: 767px) 100vw, 33vw" /></div>}
@@ -150,9 +156,9 @@ export function SimpleManager({ table, initial, fields, emptyText, renderMeta, t
         {typeof item.progress === "number" && <div className="progress-track"><div className="progress-fill" style={{ width: `${item.progress}%` }} /></div>}
         <div className="entity-meta"><span>{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></div>
       </article> : <article className="data-row" key={item.id}><div className="data-main"><strong>{item.title}</strong><p>{item.description || renderMeta(item)}</p></div><span className="status-pill">{renderMeta(item)}</span><RowActions onEdit={() => { setEditing(item); setOpen(true); }} onRemove={() => remove(item)} disabled={isItemLocked?.(item) ?? false} disabledMessage={lockedItemMessage} /></article>)}
-      {visible.length === 0 && <div className="empty-state"><div><span>✦</span>{emptyText}</div></div>}
+      {loading ? <LoadingSkeleton /> : visible.length === 0 && <div className="empty-state"><div><span>✦</span>{emptyText}</div></div>}
     </div></div>
-    <Modal open={open} title={editing ? "항목 수정" : "새 항목"} onClose={close}><form className="form-grid" action={save}>{fields.map((field) => { const defaultValue = editing?.[field.key] ?? (mobileTimeline && field.key === "eventDate" ? selectedDate : ""); return field.type === "hidden" ? <input key={field.key} name={field.key} type="hidden" defaultValue={String(defaultValue)} /> : <div className="field" key={field.key}><label htmlFor={`entity-${field.key}`}>{field.label}</label>{field.type === "textarea" ? <textarea id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(defaultValue)} required={field.required} /> : field.type === "select" ? <select id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? field.options?.[0] ?? "")}>{field.options?.map((option) => <option key={option}>{option}</option>)}</select> : field.type === "emoji" ? <EmojiField id={`entity-${field.key}`} name={field.key} initialValue={String(defaultValue)} options={field.options ?? []} required={field.required} /> : <input id={`entity-${field.key}`} className="input" name={field.key} type={field.type ?? "text"} defaultValue={String(defaultValue)} required={field.required} min={field.type === "number" ? 0 : undefined} max={field.key === "progress" ? 100 : undefined} />}</div>; })}<div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary">저장</button></div></form></Modal>
+    <Modal open={open} title={editing ? `${entityLabel} 수정` : `새 ${entityLabel}`} onClose={close}><form className="form-grid" action={save}>{error && <p className="field-error" role="alert">{error}</p>}{fields.map((field) => { const defaultValue = editing?.[field.key] ?? (mobileTimeline && field.key === "eventDate" ? selectedDate : ""); return field.type === "hidden" ? <input key={field.key} name={field.key} type="hidden" defaultValue={String(defaultValue)} /> : <div className="field" key={field.key}><label htmlFor={`entity-${field.key}`}>{field.label}</label>{field.type === "textarea" ? <textarea id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(defaultValue)} required={field.required} /> : field.type === "select" ? <select id={`entity-${field.key}`} className="input" name={field.key} defaultValue={String(editing?.[field.key] ?? field.options?.[0] ?? "")}>{field.options?.map((option) => <option key={option} value={option}>{({ active: "진행 중", paused: "보류", completed: "완료", daily: "매일", weekly: "매주", true: "즐겨찾기", false: "일반" } as Record<string, string>)[option] ?? option}</option>)}</select> : field.type === "emoji" ? <EmojiField id={`entity-${field.key}`} name={field.key} initialValue={String(defaultValue)} options={field.options ?? []} required={field.required} /> : <input id={`entity-${field.key}`} className="input" name={field.key} type={field.type ?? "text"} defaultValue={String(defaultValue)} required={field.required} min={field.type === "number" ? 0 : undefined} max={field.key === "progress" ? 100 : undefined} />}</div>; })}<div className="form-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary">저장</button></div></form></Modal>
     {toast && <Toast message={toast} onDone={() => setToast("")} />}
   </>;
 }

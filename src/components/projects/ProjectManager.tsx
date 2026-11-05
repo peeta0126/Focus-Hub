@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Icon } from "@/components/common/Icon";
 import { Modal } from "@/components/common/Modal";
 import { Toast } from "@/components/common/Toast";
@@ -64,6 +64,15 @@ export function ProjectManager({ initialProjects, userId }: { initialProjects: P
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!menuId) return;
+    const dismiss = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuId(null); };
+    const outside = (event: PointerEvent) => { if (event.target instanceof Element && !event.target.closest(".project-card-menu-wrap")) setMenuId(null); };
+    window.addEventListener("keydown", dismiss);
+    window.addEventListener("pointerdown", outside);
+    return () => { window.removeEventListener("keydown", dismiss); window.removeEventListener("pointerdown", outside); };
+  }, [menuId]);
 
   const visible = useMemo(() => projects
     .filter((project) => {
@@ -214,7 +223,7 @@ export function ProjectManager({ initialProjects, userId }: { initialProjects: P
     </section>
 
     <Modal open={modalOpen} title={editing ? "프로젝트 수정" : "새 프로젝트"} onClose={() => { setModalOpen(false); setEditing(null); }}>
-      <form className="form-grid" action={save}>
+      <form className="form-grid" action={save}>{error && <p className="field-error" role="alert">{error}</p>}
         <div className="field"><label htmlFor="project-title">프로젝트 이름 *</label><input id="project-title" name="title" className="input" required maxLength={100} defaultValue={editing?.title ?? ""} /></div>
         <div className="field"><label htmlFor="project-description">설명</label><textarea id="project-description" name="description" className="input" defaultValue={editing?.description ?? ""} /></div>
         <div className="project-form-columns"><div className="field"><label htmlFor="project-status">상태</label><select id="project-status" name="status" className="input" defaultValue={editing?.status ?? "planning"}><option value="planning">기획 중</option><option value="active">진행 중</option><option value="paused">보류</option><option value="completed">완료</option></select></div><div className="field project-auto-progress"><label>진행률</label><div>연결된 할 일에서 자동 계산</div></div></div>

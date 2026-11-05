@@ -1,4 +1,5 @@
-const CACHE = "focus-hub-static-v3";
+const CACHE_PREFIX = "focus-hub-static-";
+const CACHE = `${CACHE_PREFIX}v4`;
 const PRECACHE = ["/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -7,8 +8,11 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE).map((key) => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 function isPublicStaticAsset(request) {
@@ -17,8 +21,10 @@ function isPublicStaticAsset(request) {
   if (request.mode === "navigate" || request.destination === "document") return false;
   if (request.headers.has("range")) return false;
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return false;
-  return url.pathname.startsWith("/_next/static/")
-    || url.pathname.startsWith("/assets/")
+  // Next owns bundle caching. Development URLs can stay unchanged after edits,
+  // so caching them here mixes new HTML with old CSS/JS across app versions.
+  if (url.pathname.startsWith("/_next/")) return false;
+  return url.pathname.startsWith("/assets/")
     || url.pathname.startsWith("/icons/")
     || url.pathname === "/manifest.webmanifest"
     || url.pathname === "/apple-touch-icon.png";

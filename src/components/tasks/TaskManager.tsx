@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { Modal } from "@/components/common/Modal";
 import { Toast } from "@/components/common/Toast";
 import { emptyStringToNull, getLocalDateString } from "@/lib/date";
@@ -39,6 +40,7 @@ const createDefaults = (): Values => ({
 const statusLabel = { todo: "할 일", in_progress: "진행 중", done: "완료" };
 const priorityLabel = { low: "낮음", medium: "보통", high: "높음" };
 export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) {
+  const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Task[]>([]);
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [query, setQuery] = useState("");
@@ -55,15 +57,16 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
 
   useEffect(() => {
     const supabase = createClient();
-    if (!supabase) { console.error("Supabase is not configured"); return; }
+    if (!supabase) { console.error("Supabase is not configured"); queueMicrotask(() => { setLoading(false); setError("데이터베이스 연결 설정을 확인해주세요."); }); return; }
     supabase.auth.getUser().then(async ({ data: { user }, error: authError }) => {
-      if (authError || !user) { setError("로그인 정보를 확인하지 못했습니다."); return; }
+      if (authError || !user) { setLoading(false); setError("로그인 정보를 확인하지 못했습니다."); return; }
       const [tasksResult, projectsResult] = await Promise.all([
         supabase.from("tasks").select("*").eq("user_id", user.id).order("due_date"),
         supabase.from("projects").select("id,title").eq("user_id", user.id).order("updated_at", { ascending: false }),
       ]);
-      if (tasksResult.error) { console.error("Failed to load tasks", tasksResult.error); setError("할 일을 불러오지 못했습니다."); return; }
+      if (tasksResult.error) { console.error("Failed to load tasks", tasksResult.error); setLoading(false); setError("할 일을 불러오지 못했습니다."); return; }
       if (projectsResult.error) console.error("Failed to load task projects", projectsResult.error);
+      setLoading(false);
       setProjects(projectsResult.data ?? []);
       setItems((tasksResult.data ?? []).map((row) => ({
         id: row.id,
@@ -131,7 +134,7 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
     const supabase = createClient();
     if (!supabase) { setItems(previousItems); setError("데이터베이스 연결 설정을 확인해주세요."); return; }
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) { setItems(previousItems); setError("로그인 정보를 확인하지 못했습니다."); return; }
+    if (authError || !user) { setItems(previousItems); setLoading(false); setError("로그인 정보를 확인하지 못했습니다."); return; }
     const editable = {
       title: task.title,
       description: task.description,
@@ -224,12 +227,12 @@ export function TaskManager({ initialOpen = false }: { initialOpen?: boolean }) 
       <select className="input select-compact" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="정렬"><option value="due">마감순</option><option value="priority">우선순위순</option></select>
     </div>
     <section className="card content-card"><div className="data-list">
-      {visible.map((task) => <article className={`data-row task-data-row ${task.status === "done" ? "is-done" : ""}`} key={task.id}><button className="task-check" onClick={() => toggle(task)} aria-label={`${task.title} 완료 상태 변경`}>{task.status === "done" ? "✓" : ""}</button><div className="data-main"><strong>{task.title}</strong><p><span aria-hidden="true">◷</span> {task.dueDate} {task.dueTime || "시간 미정"}</p></div><span className={`priority ${task.priority}`}>{priorityLabel[task.priority]}</span><span className="status-pill">{statusLabel[task.status]}</span><div className="row-actions"><button className="row-action" onClick={() => startEdit(task)} aria-label={`${task.title} 수정`}>✎</button><button className="row-action danger" onClick={() => remove(task)} aria-label={`${task.title} 삭제`}>×</button></div></article>)}
-      {visible.length === 0 && <div className="empty-state"><div><span>☾</span>조건에 맞는 할 일이 없어요.</div></div>}
+      {visible.map((task) => <article className={`data-row task-data-row ${task.status === "done" ? "is-done" : ""}`} key={task.id}><button className="task-check" onClick={() => toggle(task)} aria-pressed={task.status === "done"} aria-label={`${task.title} 완료 상태 변경`}>{task.status === "done" ? "✓" : ""}</button><div className="data-main"><strong>{task.title}</strong><p><span aria-hidden="true">◷</span> {task.dueDate} {task.dueTime || "시간 미정"}</p></div><span className={`priority ${task.priority}`}>{priorityLabel[task.priority]}</span><span className="status-pill">{statusLabel[task.status]}</span><div className="row-actions"><button className="row-action" onClick={() => startEdit(task)} aria-label={`${task.title} 수정`}>✎</button><button className="row-action danger" onClick={() => remove(task)} aria-label={`${task.title} 삭제`}>×</button></div></article>)}
+      {loading ? <LoadingSkeleton label="할 일을 불러오는 중" /> : visible.length === 0 && <div className="empty-state"><div><span>☾</span>조건에 맞는 할 일이 없어요.</div></div>}
     </div></section>
     <button type="button" className="mobile-add-task" onClick={() => { setEditing(null); reset(createDefaults()); setOpen(true); }}>＋ <span>새 할 일 추가</span></button>
     <Modal open={open} title={editing ? "할 일 수정" : "새 할 일"} onClose={close}>
-      <form className="form-grid" onSubmit={handleSubmit(save)}>
+      <form className="form-grid" onSubmit={handleSubmit(save)}>{error && <p className="field-error" role="alert">{error}</p>}
         <div className="field"><label htmlFor="title">제목</label><input id="title" className="input" {...register("title")} />{errors.title && <small className="field-error">{errors.title.message}</small>}</div>
         <div className="field"><label htmlFor="description">설명</label><textarea id="description" className="input" {...register("description")} /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div className="field"><label htmlFor="status">상태</label><select id="status" className="input" {...register("status")}><option value="todo">할 일</option><option value="in_progress">진행 중</option><option value="done">완료</option></select></div><div className="field"><label htmlFor="priority">우선순위</label><select id="priority" className="input" {...register("priority")}><option value="low">낮음</option><option value="medium">보통</option><option value="high">높음</option></select></div></div>

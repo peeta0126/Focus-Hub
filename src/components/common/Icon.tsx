@@ -1,8 +1,12 @@
 import type { SVGProps } from "react";
 
-export type IconName = "home" | "tasks" | "calendar" | "habit" | "more" | "search" | "bell" | "settings" | "sun" | "moon" | "system" | "plus" | "clock" | "note" | "target" | "chevron-left" | "chevron-right";
+export type IconName = "home" | "tasks" | "calendar" | "habit" | "more" | "search" | "bell" | "settings" | "sun" | "moon" | "system" | "plus" | "clock" | "note" | "target" | "chevron-left" | "chevron-right" | "project" | "code" | "bookmark" | "panel";
 
 const paths: Record<IconName, React.ReactNode> = {
+  project: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></>,
+  code: <path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18" />,
+  bookmark: <path d="M6 3h12v18l-6-4-6 4Z" />,
+  panel: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></>,
   home: <><path d="m3 10 9-7 9 7" /><path d="M5 9v11h14V9M9 20v-6h6v6" /></>,
   tasks: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="m8 12 2.4 2.4L16.5 8" /></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4m8-4v4M3 10h18" /></>,

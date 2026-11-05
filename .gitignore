@@ -1,7 +1,42 @@
 node_modules
 .next
+.next-test
 .env*.local
 *.tsbuildinfo
 focus-*.png
 playwright-report/
 test-results/
+
+# 환경변수와 비밀키 (.env.example은 유지)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 배포·빌드·테스트 산출물
+.vercel/
+out/
+coverage/
+blob-report/
+playwright/.auth/
+
+# 로그
+*.log
+
+# 운영체제 임시 파일
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 개인 IDE 설정
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Documentation
+/docs/
+
+# UI/UX design guidelines
+/design-system/

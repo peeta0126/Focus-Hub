@@ -8,8 +8,9 @@ import { TodayTasks } from "@/components/dashboard/TodayTasks";
 import { WeatherCard } from "@/components/dashboard/WeatherCard";
 import { WeeklyCalendar } from "@/components/dashboard/WeeklyCalendar";
 import { MobileDashboardOverview, MobileQuickActions } from "@/components/dashboard/MobileDashboardOverview";
-import { AssetImage } from "@/components/common/AssetImage";
-import { DASHBOARD_ASSETS } from "@/lib/assets";
+import Link from "next/link";
+import { Suspense } from "react";
+
 import { addDaysToDateString, DEFAULT_TIME_ZONE, getLocalDateString, getWeekDateStrings, isDueWithinHours } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
 import type { CalendarEvent, DailyGoal, Goal, Habit, Note, Priority, Project, ProjectStatus, Task, TaskStatus } from "@/lib/types";
@@ -92,16 +93,15 @@ export default async function DashboardPage() {
   // eslint-disable-next-line react-hooks/purity -- Temporary server-side performance instrumentation.
   console.info(`[home-performance] page-data-total: ${(performance.now() - pageStartedAt).toFixed(1)} ms`);
 
-  return <main className="page-wrap">
+  return <main className="page-wrap dashboard-page">
     <div className="dashboard-intro">
-      <div className="intro-art"><AssetImage src={DASHBOARD_ASSETS.hero} alt="달빛이 비치는 아늑한 야간 작업실" sizes="(max-width: 1024px) 100vw, calc(100vw - 224px)" priority /></div>
-      <div className="intro-copy"><span className="eyebrow">FOCUS HUB</span><h1>좋은 하루예요, <em>{displayName}</em>!</h1><p>오늘의 집중이 더 나은 내일을 만들어요.</p></div>
-      <span className="sync-state">● 데이터 준비됨</span>
+      <div className="intro-copy"><span className="eyebrow">MAKE ROOM FOR FOCUS</span><h1>좋은 하루예요, <em>{displayName}</em>님.</h1><p>오늘 해야 할 일에 집중하고, 작은 진전을 쌓아보세요.</p></div>
+      <Link className="button intro-action" href="/planner">일정 계획하기 <span aria-hidden="true">↗</span></Link>
     </div>
     <MobileDashboardOverview tasks={dashboard.tasks} goals={dailyGoals} habits={dashboard.habits} notes={dashboard.notes} />
     <div className="dashboard-grid">
-      <ClockCard /><WeatherCard location={weatherLocation} /><TodayGoals dailyGoals={dailyGoals} urgentTasks={urgentTasks} timeZone={timeZone} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} />
-      <WeeklyCalendar events={dashboard.events} tasks={dashboard.calendarTasks} timeZone={timeZone} /><ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} />
+      <WeeklyCalendar events={dashboard.events} tasks={dashboard.calendarTasks} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} /><TodayGoals dailyGoals={dailyGoals} urgentTasks={urgentTasks} timeZone={timeZone} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} />
+      <ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} /><ClockCard /><Suspense fallback={<section className="card card-pad weather-card" role="status"><h2 className="card-title">오늘의 날씨</h2><p className="card-meta">날씨를 불러오는 중…</p></section>}><WeatherCard location={weatherLocation} /></Suspense>
     </div>
     <MobileQuickActions />
   </main>;
