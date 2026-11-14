@@ -11,7 +11,19 @@
 .daily-stat-icon svg { width: 18px; height: 18px; }
 .daily-stat strong { color: var(--subtext); font-size: 12px; font-weight: 500; }
 .daily-stat > span:last-child { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.dashboard-grid { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-areas: "tasks tasks tasks tasks tasks calendar calendar calendar calendar calendar calendar calendar" "daily daily daily daily habits habits habits habits goals goals goals goals" "projects projects projects projects notes notes notes notes clock clock weather weather"; gap: 20px; align-items: start; }
+.dashboard-grid { display: grid; gap: 20px; align-items: start; }
+.dashboard-row { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-rows: auto; gap: 20px; align-items: stretch; }
+.dashboard-row-planning { grid-template-areas: "tasks tasks tasks tasks tasks calendar calendar calendar calendar calendar calendar calendar"; }
+.dashboard-row-focus { grid-template-areas: "daily daily daily daily habits habits habits habits goals goals goals goals"; }
+.dashboard-row-summary { grid-template-areas: "projects projects projects projects notes notes notes notes clock clock weather weather"; }
+/* Only the reference card contributes to each desktop row's intrinsic height. */
+@media (min-width: 1280px) {
+  .dashboard-row > .card { min-width: 0; }
+  .dashboard-row > :is(.tasks-card, .today-goals, .goals-card, .notes-card, .clock-card, .weather-card) { contain: size; min-height: 0; overflow: auto; }
+  .dashboard-row > :is(.tasks-card, .today-goals, .goals-card, .notes-card) { display: flex; flex-direction: column; }
+  .dashboard-row :is(.card-header, .filter-tabs, .mobile-focus-progress, .daily-goal-form, .field-error) { flex-shrink: 0; }
+  .dashboard-row :is(.task-list, .check-list, .goal-list, .recent-list) { min-height: 0; overflow-y: auto; flex: 0 1 auto; align-content: start; }
+}
 .tasks-card { grid-area: tasks; min-height: 390px; }
 .weekly-card { grid-area: calendar; min-height: 390px; }
 .today-goals { grid-area: daily; }
@@ -150,7 +162,8 @@
 .quick-actions svg { width: 20px; height: 20px; color: var(--accent); }
 .quick-actions b { font-size: 11px; font-weight: 550; }
 @media (max-width: 1279px) and (min-width: 768px) {
-  .dashboard-grid { grid-template-areas: "tasks tasks tasks tasks tasks tasks daily daily daily daily daily daily" "calendar calendar calendar calendar calendar calendar calendar calendar calendar calendar calendar calendar" "habits habits habits habits habits habits goals goals goals goals goals goals" "projects projects projects projects projects projects notes notes notes notes notes notes" "clock clock clock clock clock clock weather weather weather weather weather weather"; }
+  .dashboard-grid { grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-areas: "tasks tasks tasks tasks tasks tasks daily daily daily daily daily daily" "calendar calendar calendar calendar calendar calendar calendar calendar calendar calendar calendar calendar" "habits habits habits habits habits habits goals goals goals goals goals goals" "projects projects projects projects projects projects notes notes notes notes notes notes" "clock clock clock clock clock clock weather weather weather weather weather weather"; }
+  .dashboard-row { display: contents; }
   .daily-stat { grid-template-columns: 32px 1fr; padding: 16px; gap: 6px; }
   .daily-stat > span:last-child { grid-column: 2; }
 }
@@ -166,7 +179,8 @@
   .daily-stat > span:last-child { font-size: 17px; }
   .dashboard-overview { margin-bottom: 20px; }
   .dashboard-grid { display: flex; flex-direction: column; gap: 16px; }
-  .dashboard-grid > * { width: 100%; }
+  .dashboard-row { display: contents; }
+  .dashboard-row > .card { width: 100%; }
   .weekly-card { order: 0; min-height: 0; }
   .tasks-card { order: 1; min-height: 0; }
   .today-habits { order: 2; }
@@ -209,7 +223,7 @@
 @media (max-width: 767px) { .dashboard-grid .empty-state { min-height: 64px; padding: 12px; } }
 /* Seven-day controls retain usable touch widths on narrow phones. */
 @media (max-width: 400px) {
-  .dashboard-grid > .weekly-card { width: calc(100% + 32px); margin-inline: -16px; padding-inline: 0; border-left: 0; border-right: 0; border-radius: 0; }
+  .dashboard-grid .weekly-card { width: calc(100% + 32px); margin-inline: -16px; padding-inline: 0; border-left: 0; border-right: 0; border-radius: 0; }
   .weekly-card .calendar-header, .weekly-card .calendar-navigation, .weekly-card .calendar-detail { margin-inline: 16px; }
   .weekly-card .day-head { min-width: 44px; }
 }

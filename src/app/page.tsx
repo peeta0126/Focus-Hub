@@ -100,8 +100,15 @@ export default async function DashboardPage() {
     </div>
     <MobileDashboardOverview tasks={dashboard.tasks} goals={dailyGoals} habits={dashboard.habits} notes={dashboard.notes} />
     <div className="dashboard-grid">
-      <WeeklyCalendar events={dashboard.events} tasks={dashboard.calendarTasks} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} /><TodayGoals dailyGoals={dailyGoals} urgentTasks={urgentTasks} timeZone={timeZone} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} />
-      <ActiveProjects projects={dashboard.projects} /><GoalProgress goals={dashboard.goals} /><RecentNotes notes={dashboard.notes} /><ClockCard /><Suspense fallback={<section className="card card-pad weather-card" role="status"><h2 className="card-title">오늘의 날씨</h2><p className="card-meta">날씨를 불러오는 중…</p></section>}><WeatherCard location={weatherLocation} /></Suspense>
+      <div className="dashboard-row dashboard-row-planning">
+        <WeeklyCalendar events={dashboard.events} tasks={dashboard.calendarTasks} timeZone={timeZone} /><TodayTasks initial={dashboard.tasks} />
+      </div>
+      <div className="dashboard-row dashboard-row-focus">
+        <TodayGoals dailyGoals={dailyGoals} urgentTasks={urgentTasks} timeZone={timeZone} /><TodayHabits initial={dashboard.habits} timeZone={timeZone} /><GoalProgress goals={dashboard.goals} />
+      </div>
+      <div className="dashboard-row dashboard-row-summary">
+        <ActiveProjects projects={dashboard.projects} /><RecentNotes notes={dashboard.notes} /><ClockCard /><Suspense fallback={<section className="card card-pad weather-card" role="status"><h2 className="card-title">오늘의 날씨</h2><p className="card-meta">날씨를 불러오는 중…</p></section>}><WeatherCard location={weatherLocation} /></Suspense>
+      </div>
     </div>
     <MobileQuickActions />
   </main>;
